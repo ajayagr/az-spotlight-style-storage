@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure File Explorer</title>
+    <style>
+        :root {
+            --primary-color: #0078d4;
+            --bg-color: #f3f2f1;
+            --card-bg: #ffffff;
+            --text-color: #323130;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 { margin-top: 0; color: var(--primary-color); }
+        .auth-box {
+            background: #e1dfdd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex-grow: 1;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover { border-color: var(--primary-color); }
+        .file-list {
+            list-style: none;
+            padding: 0;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-download { background-color: #107c10; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Azure File Explorer</h1>
+    
+    <div class="auth-box">
+        <label>API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter API Key to Upload/Download" value="">
+    </div>
+
+    <div class="upload-area" id="dropZone">
+        <h3>Drag & Drop files here or Click to Upload</h3>
+        <input type="file" id="fileInput" style="display: none;">
+    </div>
+
+    <h3>Files</h3>
+    <ul class="file-list" id="fileList">
+        {% for file in files %}
+        <li class="file-item">
+            <span>{{ file }}</span>
+            <a href="#" onclick="downloadFile('{{ file }}')" class="btn btn-download">Download</a>
+        </li>
+        {% else %}
+        <li style="text-align: center; padding: 20px;">No files found.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+    const apiKeyInput = document.getElementById('apiKey');
+    
+    // Load API Key from local storage if available
+    const savedKey = localStorage.getItem('azure_file_app_key');
+    if(savedKey) apiKeyInput.value = savedKey;
+
+    apiKeyInput.addEventListener('change', () => {
+        localStorage.setItem('azure_file_app_key', apiKeyInput.value);
+        // Reload page to refresh list if we were deciding visibility based on key (optional)
+        location.reload(); 
+    });
+
+    // Upload Logic
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+        if(e.target.files.length > 0) {
+            await uploadFile(e.target.files[0]);
+        }
+    });
+
+    async function uploadFile(file) {
+        const key = apiKeyInput.value;
+        if(!key) { alert("Please enter an API Key first."); return; }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch('/files', {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': key
+                },
+                body: formData
+            });
+            
+            if(response.ok) {
+                alert("Upload Successful!");
+                location.reload();
+            } else {
+                const err = await response.json();
+                alert("Upload Failed: " + (err.detail || response.statusText));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error uploading file.");
+        }
+    }
+
+    // Download Logic
+    function downloadFile(filename) {
+        const key = apiKeyInput.value;
+        if(!key) { alert("Please enter an API Key first."); return; }
+        
+        // Redirect to download URL with query param
+        window.location.href = `/files/${filename}?api_key=${encodeURIComponent(key)}`;
+    }
+</script>
+
+</body>
+</html>
