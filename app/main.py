@@ -103,3 +103,17 @@ def list_files():
     List all available files. Public Access.
     """
     return {"files": storage.list_files()}
+
+@app.delete("/files/{filename:path}")
+def delete_file(
+    filename: str, 
+    auth: str = Depends(get_api_key)
+):
+    """
+    Delete a file. Requires API Key.
+    """
+    try:
+        storage.delete_file(filename)
+        return {"filename": filename, "status": "deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

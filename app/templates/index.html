@@ -128,6 +128,29 @@
             padding: 40px;
             color: #605e5c;
         }
+
+        /* Card Actions */
+        .card-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+        }
+        .btn-delete {
+            margin-top: 10px;
+            background: none;
+            border: none;
+            color: #a80000;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .btn-delete:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -148,23 +171,30 @@
 
     <div class="file-grid" id="fileGrid">
         {% for file in files %}
-        <div class="file-card" onclick="downloadFile('{{ file }}')">
-            <div class="thumb-container">
-                {% if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
-                <img src="/files/{{ file }}" class="thumb-img" alt="{{ file }}" loading="lazy">
-                {% else %}
-                    {% if file.endswith('.pdf') %}
-                    <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
-                    {% elif file.endswith('.txt') or file.endswith('.md') %}
-                    <i class="fas fa-file-alt file-icon" style="color: #0078d4;"></i>
-                    {% elif file.endswith('.zip') or file.endswith('.rar') %}
-                    <i class="fas fa-file-archive file-icon" style="color: #fce100;"></i>
+        <div class="file-card">
+            <!-- Click Area for Download -->
+            <div class="card-content" onclick="downloadFile('{{ file }}')">
+                <div class="thumb-container">
+                    {% if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
+                    <img src="/files/{{ file }}" class="thumb-img" alt="{{ file }}" loading="lazy">
                     {% else %}
-                    <i class="fas fa-file file-icon"></i>
+                        {% if file.endswith('.pdf') %}
+                        <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
+                        {% elif file.endswith('.txt') or file.endswith('.md') %}
+                        <i class="fas fa-file-alt file-icon" style="color: #0078d4;"></i>
+                        {% elif file.endswith('.zip') or file.endswith('.rar') %}
+                        <i class="fas fa-file-archive file-icon" style="color: #fce100;"></i>
+                        {% else %}
+                        <i class="fas fa-file file-icon"></i>
+                        {% endif %}
                     {% endif %}
-                {% endif %}
+                </div>
+                <div class="file-name" title="{{ file }}">{{ file }}</div>
             </div>
-            <div class="file-name" title="{{ file }}">{{ file }}</div>
+            <!-- Delete Action -->
+            <button class="btn-delete" onclick="deleteFile('{{ file }}', event)" title="Delete File">
+                <i class="fas fa-trash-alt"></i>
+            </button>
         </div>
         {% else %}
         <div class="empty-state">
@@ -240,6 +270,34 @@
         }
         
         window.location.href = url;
+    }
+
+    async function deleteFile(filename, event) {
+        // Stop card click
+        if (event) event.stopPropagation();
+
+        const key = apiKeyInput.value;
+        if(!key) { alert("Please enter an API Key to delete."); return; }
+
+        if(!confirm(`Are you sure you want to delete "${filename}"?`)) return;
+
+        try {
+            const response = await fetch(`/files/${filename}`, {
+                method: 'DELETE',
+                headers: { 'X-API-Key': key }
+            });
+            
+            if(response.ok) {
+                // Remove element immediately or reload
+                location.reload();
+            } else {
+                const err = await response.json();
+                alert("Delete Failed: " + (err.detail || response.statusText));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error deleting file.");
+        }
     }
 </script>
 

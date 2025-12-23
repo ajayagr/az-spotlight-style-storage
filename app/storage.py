@@ -57,4 +57,22 @@ class StorageService:
         if self.mode == "AZURE":
             return [b.name for b in self.container_client.list_blobs()]
         else:
-            return [p.name for p in self.local_storage_path.glob("*") if p.is_file()]
+            files = []
+            for p in self.local_storage_path.rglob("*"):
+                if p.is_file():
+                    # Return relative path with forward slashes
+                    rel_path = p.relative_to(self.local_storage_path)
+                    files.append(str(rel_path).replace("\\", "/"))
+            return files
+
+    def delete_file(self, filename: str):
+        if self.mode == "AZURE":
+            blob_client = self.container_client.get_blob_client(filename)
+            try:
+                blob_client.delete_blob()
+            except ResourceNotFoundError:
+                pass # Already deleted or not found
+        else:
+            file_path = self.local_storage_path / filename
+            if file_path.exists():
+                file_path.unlink()
