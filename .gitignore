@@ -8,3 +8,8 @@ local_storage/
 .idea/
 *.log
 app.zip
+*.xml
+*.json
+azure_credentials.json
+publish_profile.xml
+publish_profile_new.xml
