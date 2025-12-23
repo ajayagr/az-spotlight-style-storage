@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Azure File Explorer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #0078d4;
@@ -23,112 +24,163 @@
         }
         .container {
             width: 100%;
-            max-width: 800px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 20px;
+            max-width: 1000px;
         }
-        h1 { margin-top: 0; color: var(--primary-color); }
-        .auth-box {
-            background: #e1dfdd;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        input[type="text"], input[type="password"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            flex-grow: 1;
-        }
-        .upload-area {
-            border: 2px dashed #ccc;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-        .upload-area:hover { border-color: var(--primary-color); }
-        .file-list {
-            list-style: none;
-            padding: 0;
-        }
-        .file-item {
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
         }
-        .file-item:last-child { border-bottom: none; }
-        .btn {
+        h1 { margin: 0; color: var(--primary-color); }
+        
+        .upload-section {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .auth-input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .upload-btn {
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 9px 16px;
             border-radius: 4px;
             cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
+            font-weight: 600;
         }
-        .btn:hover { opacity: 0.9; }
-        .btn-download { background-color: #107c10; }
+        .upload-btn:hover { opacity: 0.9; }
+
+        /* Grid Layout */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+        .file-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 180px;
+            position: relative;
+        }
+        .file-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .thumb-container {
+            width: 100%;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .file-icon {
+            font-size: 50px;
+            color: #605e5c;
+        }
+        
+        .file-name {
+            font-size: 13px;
+            word-break: break-all;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            width: 100%;
+            padding: 0 5px;
+        }
+        
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: #605e5c;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Azure File Explorer</h1>
+    <div class="header">
+        <h1><i class="fas fa-cloud"></i> generic-storage-bucket</h1>
+    </div>
     
-    <div class="auth-box">
-        <div class="upload-section">
-        <input type="password" id="apiKey" class="auth-input" placeholder="API Key (for uploads)">
-        <input type="text" id="folderName" class="auth-input" placeholder="Folder (optional) eg. photos/2023">
+    <div class="upload-section">
+        <input type="password" id="apiKey" class="auth-input" placeholder="API Key (for uploads)" autocomplete="off">
+        <input type="text" id="folderName" class="auth-input" placeholder="Folder (optional) eg. photos">
         <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
             <i class="fas fa-upload"></i> Upload File
         </button>
         <input type="file" id="fileInput" style="display: none;">
     </div>
-    </div>
 
-    <h3>Files</h3>
-    <ul class="file-list" id="fileList">
+    <div class="file-grid" id="fileGrid">
         {% for file in files %}
-        <li class="file-item">
-            <span>{{ file }}</span>
-            <span>{{ file }}</span>
-            <button onclick="downloadFile('{{ file }}')" class="btn btn-download">Download</button>
-        </li>
+        <div class="file-card" onclick="downloadFile('{{ file }}')">
+            <div class="thumb-container">
+                {% if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
+                <img src="/files/{{ file }}" class="thumb-img" alt="{{ file }}" loading="lazy">
+                {% else %}
+                    {% if file.endswith('.pdf') %}
+                    <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
+                    {% elif file.endswith('.txt') or file.endswith('.md') %}
+                    <i class="fas fa-file-alt file-icon" style="color: #0078d4;"></i>
+                    {% elif file.endswith('.zip') or file.endswith('.rar') %}
+                    <i class="fas fa-file-archive file-icon" style="color: #fce100;"></i>
+                    {% else %}
+                    <i class="fas fa-file file-icon"></i>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="file-name" title="{{ file }}">{{ file }}</div>
+        </div>
         {% else %}
-        <li style="text-align: center; padding: 20px;">No files found.</li>
+        <div class="empty-state">
+            <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 15px;"></i>
+            <p>No files found.</p>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
 </div>
 
 <script>
     const apiKeyInput = document.getElementById('apiKey');
-    
-    // Load API Key from local storage if available
-    const savedKey = localStorage.getItem('azure_file_app_key');
-    if(savedKey) apiKeyInput.value = savedKey;
-
-    apiKeyInput.addEventListener('change', () => {
-        localStorage.setItem('azure_file_app_key', apiKeyInput.value);
-        // Reload page to refresh list if we were deciding visibility based on key (optional)
-        location.reload(); 
-    });
-
-    // Upload Logic
-    const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
-
-    dropZone.addEventListener('click', () => fileInput.click());
+    
+    // NOTE: LocalStorage logic removed as per request. 
+    // Key must be entered every time for Uploads/Protected Downloads.
 
     fileInput.addEventListener('change', async (e) => {
         if(e.target.files.length > 0) {
@@ -150,12 +202,9 @@
         if(folder) url += `?folder=${encodeURIComponent(folder)}`;
 
         try {
-            // Show loading state (optional, keeping it simple)
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'X-API-Key': key
-                },
+                headers: { 'X-API-Key': key }, 
                 body: formData
             });
             
@@ -172,21 +221,19 @@
         }
     }
 
-    // Download Logic
     function downloadFile(filename) {
-        // Build URL
         let url = `/files/${filename}`;
         
-        // If image, just go there (Public)
+        // 1. Public Image -> Direct Open
         if(filename.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)) {
             window.open(url, '_blank');
             return;
         }
 
-        // If other file, append Key
+        // 2. Protected File -> Check Key
         const key = apiKeyInput.value;
         if(!key) { 
-            const userConf = confirm("This file type requires an API Key. Do you want to try downloading without one? (It might fail)");
+            const userConf = confirm("Protected file. Try downloading without API Key? (Might fail 403)");
             if(!userConf) return;
         } else {
             url += `?api_key=${encodeURIComponent(key)}`;
