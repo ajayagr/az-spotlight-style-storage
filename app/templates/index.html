@@ -87,13 +87,14 @@
     <h1>Azure File Explorer</h1>
     
     <div class="auth-box">
-        <label>API Key:</label>
-        <input type="password" id="apiKey" placeholder="Enter API Key to Upload/Download" value="">
-    </div>
-
-    <div class="upload-area" id="dropZone">
-        <h3>Drag & Drop files here or Click to Upload</h3>
+        <div class="upload-section">
+        <input type="password" id="apiKey" class="auth-input" placeholder="API Key (for uploads)">
+        <input type="text" id="folderName" class="auth-input" placeholder="Folder (optional) eg. photos/2023">
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-upload"></i> Upload File
+        </button>
         <input type="file" id="fileInput" style="display: none;">
+    </div>
     </div>
 
     <h3>Files</h3>
@@ -137,13 +138,20 @@
 
     async function uploadFile(file) {
         const key = apiKeyInput.value;
-        if(!key) { alert("Please enter an API Key first."); return; }
+        const folder = document.getElementById('folderName').value.trim();
+        
+        if(!key) { alert("Please enter an API Key to upload."); return; }
 
         const formData = new FormData();
         formData.append("file", file);
+        
+        // Construct URL with folder param
+        let url = '/files';
+        if(folder) url += `?folder=${encodeURIComponent(folder)}`;
 
         try {
-            const response = await fetch('/files', {
+            // Show loading state (optional, keeping it simple)
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-API-Key': key

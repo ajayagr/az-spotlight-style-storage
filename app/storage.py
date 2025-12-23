@@ -34,6 +34,7 @@ class StorageService:
             blob_client.upload_blob(data, overwrite=True)
         else:
             file_path = self.local_storage_path / filename
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "wb") as f:
                 f.write(data)
 

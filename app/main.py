@@ -38,7 +38,7 @@ def read_root(request: Request):
     files = storage.list_files()
     return templates.TemplateResponse("index.html", {"request": request, "files": files})
 
-@app.get("/files/{filename}")
+@app.get("/files/{filename:path}")
 def get_file(
     filename: str, 
     api_key_query: str = Query(None, alias="api_key"),
@@ -78,6 +78,7 @@ def get_file(
 @app.post("/files")
 async def upload_file(
     file: UploadFile = File(...), 
+    folder: str = Query(None, description="Target folder path"),
     auth: str = Depends(get_api_key)
 ):
     """
@@ -85,8 +86,14 @@ async def upload_file(
     """
     try:
         content = await file.read()
-        storage.upload_file(file.filename, content)
-        return {"filename": file.filename, "status": "uploaded", "mode": storage.mode}
+        filename = file.filename
+        if folder:
+             # Sanitize folder path (basic)
+             folder = folder.strip("/").replace("\\", "/")
+             filename = f"{folder}/{filename}"
+             
+        storage.upload_file(filename, content)
+        return {"filename": filename, "status": "uploaded", "mode": storage.mode}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
