@@ -101,7 +101,8 @@
         {% for file in files %}
         <li class="file-item">
             <span>{{ file }}</span>
-            <a href="#" onclick="downloadFile('{{ file }}')" class="btn btn-download">Download</a>
+            <span>{{ file }}</span>
+            <button onclick="downloadFile('{{ file }}')" class="btn btn-download">Download</button>
         </li>
         {% else %}
         <li style="text-align: center; padding: 20px;">No files found.</li>
@@ -165,11 +166,25 @@
 
     // Download Logic
     function downloadFile(filename) {
-        const key = apiKeyInput.value;
-        if(!key) { alert("Please enter an API Key first."); return; }
+        // Build URL
+        let url = `/files/${filename}`;
         
-        // Redirect to download URL with query param
-        window.location.href = `/files/${filename}?api_key=${encodeURIComponent(key)}`;
+        // If image, just go there (Public)
+        if(filename.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)) {
+            window.open(url, '_blank');
+            return;
+        }
+
+        // If other file, append Key
+        const key = apiKeyInput.value;
+        if(!key) { 
+            const userConf = confirm("This file type requires an API Key. Do you want to try downloading without one? (It might fail)");
+            if(!userConf) return;
+        } else {
+            url += `?api_key=${encodeURIComponent(key)}`;
+        }
+        
+        window.location.href = url;
     }
 </script>
 

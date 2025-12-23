@@ -39,11 +39,27 @@ def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "files": files})
 
 @app.get("/files/{filename}")
-def get_file(filename: str, auth: str = Depends(get_api_key)):
+def get_file(
+    filename: str, 
+    api_key_query: str = Query(None, alias="api_key"),
+    api_key_header: str = Header(None, alias="X-API-Key")
+):
     """
-    Retrieve a file by its name. Requires API Key.
+    Retrieve a file. Public for Images. Protected for others.
     """
     try:
+        # 1. Check if public image
+        is_image = filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))
+        
+        # 2. If not image, enforce Auth
+        if not is_image:
+            # Manually check key since we removed Depends()
+            key = api_key_query or api_key_header
+            if not API_KEY:
+                pass # Dev mode
+            elif key != API_KEY:
+                raise HTTPException(status_code=403, detail="Invalid API Key. Required for non-image files.")
+
         file_content = storage.get_file(filename)
         if file_content is None:
             raise HTTPException(status_code=404, detail="File not found")
@@ -54,6 +70,8 @@ def get_file(filename: str, auth: str = Depends(get_api_key)):
             media_type = "application/octet-stream"
             
         return Response(content=file_content, media_type=media_type)
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -73,8 +91,8 @@ async def upload_file(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/files")
-def list_files(auth: str = Depends(get_api_key)):
+def list_files():
     """
-    List all available files. Requires API Key.
+    List all available files. Public Access.
     """
     return {"files": storage.list_files()}
