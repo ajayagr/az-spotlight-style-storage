@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Azure File Explorer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #0078d4;
@@ -24,143 +23,110 @@
         }
         .container {
             width: 100%;
-            max-width: 1000px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        h1 { margin: 0; color: var(--primary-color); }
-        
-        .upload-section {
+            max-width: 800px;
             background: var(--card-bg);
-            padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 { margin-top: 0; color: var(--primary-color); }
+        .auth-box {
+            background: #e1dfdd;
+            padding: 10px;
+            border-radius: 4px;
             margin-bottom: 20px;
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
-            flex-wrap: wrap;
         }
-        .auth-input {
+        input[type="text"], input[type="password"] {
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            width: 200px;
+            flex-grow: 1;
         }
-        .upload-btn {
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover { border-color: var(--primary-color); }
+        .file-list {
+            list-style: none;
+            padding: 0;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .btn {
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 9px 16px;
+            padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
-            font-weight: 600;
-        }
-        .upload-btn:hover { opacity: 0.9; }
-
-        /* Grid Layout */
-        .file-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-        }
-        .file-card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
             text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 140px;
-        }
-        .file-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .file-icon {
-            font-size: 40px;
-            color: #605e5c;
-            margin-bottom: 10px;
-        }
-        .file-name {
             font-size: 14px;
-            word-break: break-all;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
         }
-        
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 40px;
-            color: #605e5c;
-        }
+        .btn:hover { opacity: 0.9; }
+        .btn-download { background-color: #107c10; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1><i class="fas fa-cloud"></i> generic-storage-bucket</h1>
-    </div>
+    <h1>Azure File Explorer</h1>
     
-    <div class="upload-section">
-        <input type="password" id="apiKey" class="auth-input" placeholder="API Key (for uploads)">
-        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
-            <i class="fas fa-upload"></i> Upload File
-        </button>
+    <div class="auth-box">
+        <label>API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter API Key to Upload/Download" value="">
+    </div>
+
+    <div class="upload-area" id="dropZone">
+        <h3>Drag & Drop files here or Click to Upload</h3>
         <input type="file" id="fileInput" style="display: none;">
     </div>
 
-    <div class="file-grid" id="fileGrid">
+    <h3>Files</h3>
+    <ul class="file-list" id="fileList">
         {% for file in files %}
-        <a href="/files/{{ file }}" class="file-card" target="_blank">
-            <div class="file-icon">
-                {% if file.endswith('.png') or file.endswith('.jpg') or file.endswith('.jpeg') %}
-                <i class="fas fa-image" style="color: #d13438;"></i>
-                {% elif file.endswith('.pdf') %}
-                <i class="fas fa-file-pdf" style="color: #ff4040;"></i>
-                {% elif file.endswith('.txt') or file.endswith('.md') %}
-                <i class="fas fa-file-alt" style="color: #0078d4;"></i>
-                {% else %}
-                <i class="fas fa-file"></i>
-                {% endif %}
-            </div>
-            <div class="file-name" title="{{ file }}">{{ file }}</div>
-        </a>
+        <li class="file-item">
+            <span>{{ file }}</span>
+            <a href="#" onclick="downloadFile('{{ file }}')" class="btn btn-download">Download</a>
+        </li>
         {% else %}
-        <div class="empty-state">
-            <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 15px;"></i>
-            <p>No files found.</p>
-        </div>
+        <li style="text-align: center; padding: 20px;">No files found.</li>
         {% endfor %}
-    </div>
+    </ul>
 </div>
 
 <script>
     const apiKeyInput = document.getElementById('apiKey');
-    const fileInput = document.getElementById('fileInput');
     
-    // Load API Key
+    // Load API Key from local storage if available
     const savedKey = localStorage.getItem('azure_file_app_key');
     if(savedKey) apiKeyInput.value = savedKey;
 
     apiKeyInput.addEventListener('change', () => {
         localStorage.setItem('azure_file_app_key', apiKeyInput.value);
+        // Reload page to refresh list if we were deciding visibility based on key (optional)
+        location.reload(); 
     });
+
+    // Upload Logic
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', async (e) => {
         if(e.target.files.length > 0) {
@@ -170,16 +136,17 @@
 
     async function uploadFile(file) {
         const key = apiKeyInput.value;
-        if(!key) { alert("Please enter an API Key to upload."); return; }
+        if(!key) { alert("Please enter an API Key first."); return; }
 
         const formData = new FormData();
         formData.append("file", file);
 
         try {
-            // Show loading state (optional, keeping it simple)
             const response = await fetch('/files', {
                 method: 'POST',
-                headers: { 'X-API-Key': key }, // Only needed for POST
+                headers: {
+                    'X-API-Key': key
+                },
                 body: formData
             });
             
@@ -194,6 +161,15 @@
             console.error(error);
             alert("Error uploading file.");
         }
+    }
+
+    // Download Logic
+    function downloadFile(filename) {
+        const key = apiKeyInput.value;
+        if(!key) { alert("Please enter an API Key first."); return; }
+        
+        // Redirect to download URL with query param
+        window.location.href = `/files/${filename}?api_key=${encodeURIComponent(key)}`;
     }
 </script>
 

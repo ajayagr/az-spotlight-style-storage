@@ -39,9 +39,9 @@ def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "files": files})
 
 @app.get("/files/{filename}")
-def get_file(filename: str):
+def get_file(filename: str, auth: str = Depends(get_api_key)):
     """
-    Retrieve a file by its name. Public Access.
+    Retrieve a file by its name. Requires API Key.
     """
     try:
         file_content = storage.get_file(filename)
@@ -73,8 +73,8 @@ async def upload_file(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/files")
-def list_files():
+def list_files(auth: str = Depends(get_api_key)):
     """
-    List all available files. Public Access.
+    List all available files. Requires API Key.
     """
     return {"files": storage.list_files()}
