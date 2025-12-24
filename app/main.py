@@ -35,7 +35,15 @@ def read_root(request: Request):
     """
     Serve the Home Page UI.
     """
-    files = storage.list_files()
+    raw_files = storage.list_files()
+    files = []
+    for f in raw_files:
+        parts = f.rsplit("/", 1)
+        if len(parts) > 1:
+            files.append({"path": f, "folder": parts[0], "name": parts[1]})
+        else:
+            files.append({"path": f, "folder": None, "name": f})
+            
     return templates.TemplateResponse("index.html", {"request": request, "files": files})
 
 @app.get("/files/{filename:path}")

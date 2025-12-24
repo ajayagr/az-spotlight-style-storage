@@ -111,6 +111,19 @@
             color: #605e5c;
         }
         
+        .file-folder {
+            font-size: 11px;
+            color: #605e5c;
+            margin-bottom: 4px;
+            background: #f3f2f1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
         .file-name {
             font-size: 13px;
             word-break: break-all;
@@ -173,26 +186,33 @@
         {% for file in files %}
         <div class="file-card">
             <!-- Click Area for Download -->
-            <div class="card-content" onclick="downloadFile('{{ file }}')">
+            <div class="card-content" onclick="downloadFile('{{ file.path }}')">
                 <div class="thumb-container">
-                    {% if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
-                    <img src="/files/{{ file }}" class="thumb-img" alt="{{ file }}" loading="lazy">
+                    {% if file.path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
+                    <img src="/files/{{ file.path }}" class="thumb-img" alt="{{ file.name }}" loading="lazy">
                     {% else %}
-                        {% if file.endswith('.pdf') %}
+                        {% if file.path.endswith('.pdf') %}
                         <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
-                        {% elif file.endswith('.txt') or file.endswith('.md') %}
+                        {% elif file.path.endswith('.txt') or file.path.endswith('.md') %}
                         <i class="fas fa-file-alt file-icon" style="color: #0078d4;"></i>
-                        {% elif file.endswith('.zip') or file.endswith('.rar') %}
+                        {% elif file.path.endswith('.zip') or file.path.endswith('.rar') %}
                         <i class="fas fa-file-archive file-icon" style="color: #fce100;"></i>
                         {% else %}
                         <i class="fas fa-file file-icon"></i>
                         {% endif %}
                     {% endif %}
                 </div>
-                <div class="file-name" title="{{ file }}">{{ file }}</div>
+                
+                {% if file.folder %}
+                <div class="file-folder" title="{{ file.folder }}">
+                    <i class="fas fa-folder-open"></i> {{ file.folder }}
+                </div>
+                {% endif %}
+                
+                <div class="file-name" title="{{ file.name }}">{{ file.name }}</div>
             </div>
             <!-- Delete Action -->
-            <button class="btn-delete" onclick="deleteFile('{{ file }}', event)" title="Delete File">
+            <button class="btn-delete" onclick="deleteFile('{{ file.path }}', event)" title="Delete File">
                 <i class="fas fa-trash-alt"></i>
             </button>
         </div>
