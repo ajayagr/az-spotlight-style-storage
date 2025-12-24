@@ -17,7 +17,6 @@
             --border-color: #e1dfdd;
             --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
             --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
         }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -30,10 +29,7 @@
             align-items: center;
             min-height: 100vh;
         }
-        .container {
-            width: 100%;
-            max-width: 1100px;
-        }
+        .container { width: 100%; max-width: 1100px; }
         
         /* Header */
         .header {
@@ -45,15 +41,54 @@
             border-bottom: 1px solid #eaeaea;
         }
         .header h1 { 
-            margin: 0; 
-            font-weight: 600; 
-            color: var(--text-primary);
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            margin: 0; font-weight: 600; color: var(--text-primary);
+            font-size: 24px; display: flex; align-items: center; gap: 12px;
         }
         .header h1 i { color: var(--primary-color); }
+        
+        /* View Toggle */
+        .view-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
 
         /* Upload Section */
         .upload-section {
@@ -123,107 +158,62 @@
             box-shadow: var(--shadow-md);
             border-color: #f0f0f0;
         }
-
-        /* Card Content */
-        .card-content {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
+        .card-content { width: 100%; display: flex; flex-direction: column; flex-grow: 1; }
         
         .thumb-container {
-            width: 100%;
-            height: 140px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100%; height: 140px;
+            display: flex; align-items: center; justify-content: center;
             background-color: #f9f9f9;
             border-bottom: 1px solid #f0f0f0;
-            position: relative;
         }
-        .thumb-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .file-icon {
-            font-size: 48px;
-            color: #8a8886;
-        }
+        .thumb-img { width: 100%; height: 100%; object-fit: cover; }
+        .file-icon { font-size: 48px; color: #8a8886; }
 
-        /* Info Section */
-        .card-info {
-            padding: 15px;
-            text-align: left;
-        }
+        .card-info { padding: 15px; text-align: left; }
         
-        .file-folder {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-            background: #f1f1f1;
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: inline-block;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+        .file-folder-badge {
+            font-size: 11px; color: var(--text-secondary);
+            margin-bottom: 6px; background: #f1f1f1;
+            padding: 4px 8px; border-radius: 4px;
+            display: inline-block; max-width: 100%;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
             font-weight: 500;
         }
         
         .file-name {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-primary);
+            font-size: 14px; font-weight: 500; color: var(--text-primary);
             word-break: break-all;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;
         }
 
-        /* Delete Button */
         .btn-delete {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            position: absolute; top: 10px; right: 10px;
             background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #f0f0f0;
-            color: #d13438;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            opacity: 0;
-            transform: scale(0.9);
-            transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #f0f0f0; color: #d13438;
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; opacity: 0; transform: scale(0.9);
+            transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .file-card:hover .btn-delete {
-            opacity: 1;
-            transform: scale(1);
-        }
-        .btn-delete:hover {
-            background: #fff;
-            color: #a80000;
-            transform: scale(1.1);
-        }
+        .file-card:hover .btn-delete { opacity: 1; transform: scale(1); }
+        .btn-delete:hover { background: #fff; color: #a80000; transform: scale(1.1); }
         
         .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px;
-            color: var(--text-secondary);
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: var(--shadow-sm);
+            grid-column: 1 / -1; text-align: center; padding: 60px;
+            color: var(--text-secondary); background: var(--card-bg);
+            border-radius: 12px; box-shadow: var(--shadow-sm);
         }
+
+        /* Folder View Styles */
+        .folder-section { margin-bottom: 30px; }
+        .folder-header {
+            font-size: 16px; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 15px; display: flex; align-items: center; gap: 8px;
+            padding-bottom: 10px; border-bottom: 1px solid #eaeaea;
+        }
+        .folder-header i { color: #ffc400; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -231,6 +221,14 @@
 <div class="container">
     <div class="header">
         <h1><i class="fas fa-cubes"></i> File Bucket</h1>
+        <div class="view-toggle">
+            <span>Files</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="viewToggle" onchange="toggleView()">
+                <span class="slider"></span>
+            </label>
+            <span>Folders</span>
+        </div>
     </div>
     
     <div class="upload-section">
@@ -242,10 +240,10 @@
         <input type="file" id="fileInput" style="display: none;">
     </div>
 
-    <div class="file-grid" id="fileGrid">
+    <!-- File View (Flat Grid) -->
+    <div class="file-grid" id="fileView">
         {% for file in files %}
-        <div class="file-card">
-            <!-- Click Area for Download -->
+        <div class="file-card" data-folder="{{ file.folder or '' }}" data-path="{{ file.path }}">
             <div class="card-content" onclick="downloadFile('{{ file.path }}')">
                 <div class="thumb-container">
                     {% if file.path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
@@ -262,18 +260,15 @@
                         {% endif %}
                     {% endif %}
                 </div>
-                
                 <div class="card-info">
                     {% if file.folder %}
-                    <div class="file-folder" title="{{ file.folder }}">
+                    <div class="file-folder-badge" title="{{ file.folder }}">
                         <i class="far fa-folder"></i> {{ file.folder }}
                     </div>
                     {% endif %}
                     <div class="file-name" title="{{ file.name }}">{{ file.name }}</div>
                 </div>
             </div>
-            
-            <!-- Delete Action -->
             <button class="btn-delete" onclick="deleteFile('{{ file.path }}', event)" title="Delete File">
                 <i class="far fa-trash-alt"></i>
             </button>
@@ -286,92 +281,127 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- Folder View (Grouped) -->
+    <div id="folderView" class="hidden"></div>
 </div>
 
 <script>
     const apiKeyInput = document.getElementById('apiKey');
     const fileInput = document.getElementById('fileInput');
+    const fileViewEl = document.getElementById('fileView');
+    const folderViewEl = document.getElementById('folderView');
+    const viewToggle = document.getElementById('viewToggle');
+
+    // Build Folder View on Load
+    function buildFolderView() {
+        const cards = document.querySelectorAll('#fileView .file-card');
+        const folders = {};
+        const rootFiles = [];
+
+        cards.forEach(card => {
+            const folder = card.dataset.folder;
+            const clone = card.cloneNode(true);
+            // Re-attach event listeners
+            clone.querySelector('.card-content').onclick = () => downloadFile(card.dataset.path);
+            clone.querySelector('.btn-delete').onclick = (e) => deleteFile(card.dataset.path, e);
+
+            if (folder) {
+                if (!folders[folder]) folders[folder] = [];
+                folders[folder].push(clone);
+            } else {
+                rootFiles.push(clone);
+            }
+        });
+
+        folderViewEl.innerHTML = '';
+
+        // Root Files First
+        if (rootFiles.length > 0) {
+            const section = document.createElement('div');
+            section.className = 'folder-section';
+            section.innerHTML = `<div class="folder-header"><i class="fas fa-home"></i> Root</div>`;
+            const grid = document.createElement('div');
+            grid.className = 'file-grid';
+            rootFiles.forEach(f => grid.appendChild(f));
+            section.appendChild(grid);
+            folderViewEl.appendChild(section);
+        }
+
+        // Folders
+        Object.keys(folders).sort().forEach(folderName => {
+            const section = document.createElement('div');
+            section.className = 'folder-section';
+            section.innerHTML = `<div class="folder-header"><i class="fas fa-folder"></i> ${folderName}</div>`;
+            const grid = document.createElement('div');
+            grid.className = 'file-grid';
+            folders[folderName].forEach(f => grid.appendChild(f));
+            section.appendChild(grid);
+            folderViewEl.appendChild(section);
+        });
+
+        if (cards.length === 0) {
+            folderViewEl.innerHTML = `<div class="empty-state">
+                <i class="fas fa-box-open" style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;"></i>
+                <h3>No files yet</h3>
+                <p>Upload a file to get started.</p>
+            </div>`;
+        }
+    }
+
+    function toggleView() {
+        if (viewToggle.checked) {
+            fileViewEl.classList.add('hidden');
+            folderViewEl.classList.remove('hidden');
+        } else {
+            fileViewEl.classList.remove('hidden');
+            folderViewEl.classList.add('hidden');
+        }
+    }
+
+    // Initialize
+    buildFolderView();
 
     fileInput.addEventListener('change', async (e) => {
-        if(e.target.files.length > 0) {
-            await uploadFile(e.target.files[0]);
-        }
+        if(e.target.files.length > 0) await uploadFile(e.target.files[0]);
     });
 
     async function uploadFile(file) {
         const key = apiKeyInput.value;
         const folder = document.getElementById('folderName').value.trim();
-        
         if(!key) { alert("Please enter an API Key to upload."); return; }
 
         const formData = new FormData();
         formData.append("file", file);
-        
         let url = '/files';
         if(folder) url += `?folder=${encodeURIComponent(folder)}`;
 
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'X-API-Key': key }, 
-                body: formData
-            });
-            
-            if(response.ok) {
-                location.reload();
-            } else {
-                const err = await response.json();
-                alert("Upload Failed: " + (err.detail || response.statusText));
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Error uploading file.");
-        }
+            const response = await fetch(url, { method: 'POST', headers: { 'X-API-Key': key }, body: formData });
+            if(response.ok) location.reload();
+            else { const err = await response.json(); alert("Upload Failed: " + (err.detail || response.statusText)); }
+        } catch (error) { console.error(error); alert("Error uploading file."); }
     }
 
     function downloadFile(filename) {
         let url = `/files/${filename}`;
-        
-        if(filename.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)) {
-            window.open(url, '_blank');
-            return;
-        }
-
+        if(filename.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)) { window.open(url, '_blank'); return; }
         const key = apiKeyInput.value;
-        if(!key) { 
-            const userConf = confirm("This file may require an API Key. Continue without one?");
-            if(!userConf) return;
-        } else {
-            url += `?api_key=${encodeURIComponent(key)}`;
-        }
-        
+        if(!key) { if(!confirm("This file may require an API Key. Continue without one?")) return; }
+        else { url += `?api_key=${encodeURIComponent(key)}`; }
         window.location.href = url;
     }
 
     async function deleteFile(filename, event) {
         if (event) event.stopPropagation();
-
         const key = apiKeyInput.value;
         if(!key) { alert("Please enter an API Key to delete."); return; }
-
         if(!confirm(`Are you sure you want to delete "${filename}"?`)) return;
-
         try {
-            const response = await fetch(`/files/${filename}`, {
-                method: 'DELETE',
-                headers: { 'X-API-Key': key }
-            });
-            
-            if(response.ok) {
-                location.reload();
-            } else {
-                const err = await response.json();
-                alert("Delete Failed: " + (err.detail || response.statusText));
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Error deleting file.");
-        }
+            const response = await fetch(`/files/${filename}`, { method: 'DELETE', headers: { 'X-API-Key': key } });
+            if(response.ok) location.reload();
+            else { const err = await response.json(); alert("Delete Failed: " + (err.detail || response.statusText)); }
+        } catch (error) { console.error(error); alert("Error deleting file."); }
     }
 </script>
 
