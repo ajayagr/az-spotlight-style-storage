@@ -9,7 +9,11 @@ local_storage/
 *.log
 app.zip
 *.xml
-*.json
 azure_credentials.json
 publish_profile.xml
 publish_profile_new.xml
+
+# Azure Functions - allow config but block secrets
+!host.json
+!function.json
+local.settings.json
