@@ -221,6 +221,10 @@ class StyleSyncService:
             
             logger.info(f"Expected: {len(expected_state)}, Tasks to process: {len(tasks)}")
             
+            # Track which originals have been copied to avoid duplicates
+            copied_originals = set()
+            existing_files = set(self.storage.list_files())
+            
             for task in tasks:
                 try:
                     # Read source image
@@ -230,6 +234,13 @@ class StyleSyncService:
                         logger.error(f"Could not read source file: {task.source_path}")
                         result.failed.append(task.output_filename)
                         continue
+                    
+                    # Copy original to 'original' folder if not already copied
+                    original_target = f"{output_path.strip('/')}/original/{task.output_filename}"
+                    if task.output_filename not in copied_originals and original_target not in existing_files:
+                        self.storage.upload_file(original_target, input_data)
+                        copied_originals.add(task.output_filename)
+                        logger.info(f"Copied original: original/{task.output_filename}")
                     
                     # Generate styled image
                     gen_result: GeneratorResult = generator.process_image_bytes(
