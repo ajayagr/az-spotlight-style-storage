@@ -1,0 +1,83 @@
+### Azure Spotlight Style Storage - API Examples
+### Use with REST Client extension for VS Code
+
+@baseUrl = http://localhost:8000
+@apiKey = your-api-key
+
+### ===========================================
+### File Management APIs
+### ===========================================
+
+### List all files (public)
+GET {{baseUrl}}/files
+
+###
+
+### Get a specific file (images are public)
+GET {{baseUrl}}/files/photos/sample.jpg
+
+###
+
+### Upload a file (requires API key)
+POST {{baseUrl}}/files?folder=photos
+X-API-Key: {{apiKey}}
+Content-Type: multipart/form-data; boundary=----FormBoundary
+
+------FormBoundary
+Content-Disposition: form-data; name="file"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< ./sample.jpg
+------FormBoundary--
+
+###
+
+### Delete a file (requires API key)
+DELETE {{baseUrl}}/files/photos/sample.jpg
+X-API-Key: {{apiKey}}
+
+### ===========================================
+### StyleSync APIs
+### ===========================================
+
+### Run StyleSync (synchronous)
+POST {{baseUrl}}/stylesync
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+    "source_path": "originals/",
+    "output_path": "styled/"
+}
+
+###
+
+### Run StyleSync (async/background)
+POST {{baseUrl}}/stylesync/async
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+    "source_path": "originals/",
+    "output_path": "styled/"
+}
+
+###
+
+### Get StyleSync job status
+GET {{baseUrl}}/stylesync/status/550e8400-e29b-41d4-a716-446655440000
+
+###
+
+### List styleable images
+GET {{baseUrl}}/stylesync/images?source_path=originals/
+
+###
+
+### Get configured styles
+GET {{baseUrl}}/stylesync/styles
+
+###
+
+### List AI providers
+GET {{baseUrl}}/stylesync/providers
