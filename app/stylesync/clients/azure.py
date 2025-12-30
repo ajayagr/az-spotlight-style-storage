@@ -1,6 +1,11 @@
 """
 Azure Generator for StyleSync.
-Uses Azure AI endpoints for image style transformation.
+Uses Azure AI/OpenAI endpoints for image style transformation.
+
+Required Environment Variables:
+    AZURE_OPENAI_ENDPOINT: Azure OpenAI endpoint URL
+    AZURE_OPENAI_API_KEY: Azure OpenAI API key
+    AZURE_OPENAI_MODEL: Model name (default: flux.1-kontext-pro)
 """
 import logging
 import os
@@ -12,26 +17,48 @@ from .base import BaseGenerator, GeneratorResult
 
 logger = logging.getLogger(__name__)
 
+
 class AzureGenerator(BaseGenerator):
-    """Azure AI image generator using Flux model."""
+    """Azure AI image generator using Flux or other models."""
+    
+    # Environment variable names (consistent with Azure SDK conventions)
+    ENV_ENDPOINT = "AZURE_OPENAI_ENDPOINT"
+    ENV_API_KEY = "AZURE_OPENAI_API_KEY"
+    ENV_MODEL = "AZURE_OPENAI_MODEL"
+    
+    # Default model if not specified
+    DEFAULT_MODEL = "flux.1-kontext-pro"
     
     def __init__(self):
-        self.endpoint = os.environ.get("AZURE_ENDPOINT_URL")
-        self.api_key = os.environ.get("AZURE_API_KEY")
+        self.endpoint = os.getenv(self.ENV_ENDPOINT)
+        self.api_key = os.getenv(self.ENV_API_KEY)
+        self.model = os.getenv(self.ENV_MODEL, self.DEFAULT_MODEL)
         
     def is_configured(self) -> bool:
         """Check if Azure generator is properly configured."""
         return bool(self.endpoint and self.api_key)
     
+    def get_missing_config(self) -> list:
+        """Return list of missing configuration variables."""
+        missing = []
+        if not self.endpoint:
+            missing.append(self.ENV_ENDPOINT)
+        if not self.api_key:
+            missing.append(self.ENV_API_KEY)
+        return missing
+    
     def process_image_bytes(self, image_data: bytes, filename: str, prompt: str, strength: float) -> GeneratorResult:
         """Process image using Azure AI endpoint."""
         if not self.is_configured():
-            raise ValueError("Environment variables AZURE_ENDPOINT_URL and AZURE_API_KEY must be set.")
+            missing = self.get_missing_config()
+            raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
             
         logger.info(f"Using Azure Endpoint: {self.endpoint}")
+        logger.info(f"Using Model: {self.model}")
 
         headers = {
-            "Authorization": f"Bearer {self.api_key}"
+            "Authorization": f"Bearer {self.api_key}",
+            "api-key": self.api_key  # Azure OpenAI uses api-key header
         }
 
         # Determine mime type
@@ -40,7 +67,7 @@ class AzureGenerator(BaseGenerator):
             mime_type = "image/png" 
 
         start_time = time.time()
-        req_info = f"POST {self.endpoint}\nData: model=flux.1-kontext-pro, prompt={prompt[:50]}..."
+        req_info = f"POST {self.endpoint}\nModel: {self.model}\nPrompt: {prompt[:50]}..."
         resp_info = ""
         
         try:
@@ -50,7 +77,7 @@ class AzureGenerator(BaseGenerator):
             }
              
             data = {
-                "model": "flux.1-kontext-pro",
+                "model": self.model,
                 "prompt": prompt
             }
 

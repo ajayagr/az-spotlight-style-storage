@@ -488,13 +488,23 @@ curl "http://localhost:8000/stylesync/providers"
 | `CONTAINER_NAME` | No | `file-container` | Azure Blob container name |
 | `API_KEY` | No | `default-insecure-key` | API key for protected endpoints |
 
-### AI Provider Configuration
+### Azure OpenAI Provider Configuration
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `AZURE_ENDPOINT_URL` | Conditional | Azure AI endpoint URL (required for Azure provider) |
-| `AZURE_API_KEY` | Conditional | Azure AI API key (required for Azure provider) |
-| `STABILITY_API_KEY` | Conditional | Stability AI API key (required for Stability provider) |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `AZURE_OPENAI_ENDPOINT` | Yes* | - | Azure OpenAI endpoint URL (e.g., `https://your-resource.openai.azure.com/...`) |
+| `AZURE_OPENAI_API_KEY` | Yes* | - | Azure OpenAI API key |
+| `AZURE_OPENAI_MODEL` | No | `flux.1-kontext-pro` | Model deployment name to use |
+
+*Required when using the `azure` provider for StyleSync
+
+### Stability AI Provider Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `STABILITY_API_KEY` | Yes* | - | Stability AI API key from [platform.stability.ai](https://platform.stability.ai) |
+
+*Required when using the `stability` provider for StyleSync
 
 ---
 
@@ -517,12 +527,13 @@ When no connection string is provided, files are stored locally:
 ## 🎨 AI Providers
 
 ### Azure AI (Flux)
-Uses the Flux.1-Kontext-Pro model for high-quality image transformations.
+Uses the Flux.1-Kontext-Pro model (or custom model) for high-quality image transformations.
 
 **Configuration**:
 ```bash
-export AZURE_ENDPOINT_URL="https://your-endpoint.openai.azure.com/..."
-export AZURE_API_KEY="your-azure-api-key"
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/openai/deployments/your-deployment/images/generations?api-version=2024-02-01"
+export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
+export AZURE_OPENAI_MODEL="flux.1-kontext-pro"  # Optional, this is the default
 ```
 
 ### Stability AI

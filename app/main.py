@@ -345,15 +345,24 @@ def list_providers():
         "providers": [
             {
                 "name": "azure",
-                "description": "Azure AI with Flux model",
+                "description": f"Azure OpenAI with {azure_gen.model} model",
                 "configured": azure_gen.is_configured(),
-                "required_env_vars": ["AZURE_ENDPOINT_URL", "AZURE_API_KEY"]
+                "model": azure_gen.model,
+                "required_env_vars": [
+                    AzureGenerator.ENV_ENDPOINT,
+                    AzureGenerator.ENV_API_KEY
+                ],
+                "optional_env_vars": [
+                    f"{AzureGenerator.ENV_MODEL} (default: {AzureGenerator.DEFAULT_MODEL})"
+                ],
+                "missing": azure_gen.get_missing_config() if not azure_gen.is_configured() else []
             },
             {
                 "name": "stability",
                 "description": "Stability AI with Stable Diffusion XL",
                 "configured": stability_gen.is_configured(),
-                "required_env_vars": ["STABILITY_API_KEY"]
+                "required_env_vars": ["STABILITY_API_KEY"],
+                "missing": ["STABILITY_API_KEY"] if not stability_gen.is_configured() else []
             }
         ]
     }
