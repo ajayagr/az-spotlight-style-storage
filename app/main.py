@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 # Styles configuration file path
 STYLES_FILE_PATH = Path(__file__).parent.parent / "styles.json"
 
+# StyleSync default folder configuration
+STYLE_SYNC_DEFAULT_SOURCE = os.getenv("STYLE_SYNC_DEFAULT_SOURCE_FOLDER", "")
+STYLE_SYNC_DEFAULT_TARGET = os.getenv("STYLE_SYNC_DEFAULT_TARGET_FOLDER", "styled/")
+
 
 def load_styles_from_file() -> List[dict]:
     """
@@ -164,8 +168,8 @@ def delete_file(
 
 class StyleSyncRequest(BaseModel):
     """Request body for StyleSync operation."""
-    source_path: str = Field(default="", description="Source directory path containing images")
-    output_path: str = Field(default="styled/", description="Output directory for styled images")
+    source_path: Optional[str] = Field(default=None, description="Source directory path containing images. Falls back to STYLE_SYNC_DEFAULT_SOURCE_FOLDER env var if not provided.")
+    output_path: Optional[str] = Field(default=None, description="Output directory for styled images. Falls back to STYLE_SYNC_DEFAULT_TARGET_FOLDER env var if not provided.")
     provider: str = Field(default="azure", description="AI provider: 'azure' or 'stability'")
     
     class Config:
@@ -214,9 +218,13 @@ def run_stylesync(
         if not styles:
             raise HTTPException(status_code=400, detail="No styles configured in styles.json")
         
+        # Use request values or fall back to environment defaults
+        source_path = request.source_path if request.source_path is not None else STYLE_SYNC_DEFAULT_SOURCE
+        output_path = request.output_path if request.output_path is not None else STYLE_SYNC_DEFAULT_TARGET
+        
         result = stylesync_service.process_sync(
-            source_path=request.source_path,
-            output_path=request.output_path,
+            source_path=source_path,
+            output_path=output_path,
             styles=styles,
             provider=request.provider
         )
@@ -264,11 +272,15 @@ async def run_stylesync_async(
     except FileNotFoundError as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+    # Use request values or fall back to environment defaults
+    source_path = request.source_path if request.source_path is not None else STYLE_SYNC_DEFAULT_SOURCE
+    output_path = request.output_path if request.output_path is not None else STYLE_SYNC_DEFAULT_TARGET
+    
     # Initialize job status
     sync_jobs[job_id] = {
         "status": "running",
-        "source": request.source_path,
-        "output": request.output_path,
+        "source": source_path,
+        "output": output_path,
         "processed": [],
         "failed": [],
         "skipped": [],
@@ -278,8 +290,8 @@ async def run_stylesync_async(
     def run_sync_job():
         try:
             result = stylesync_service.process_sync(
-                source_path=request.source_path,
-                output_path=request.output_path,
+                source_path=source_path,
+                output_path=output_path,
                 styles=styles,
                 provider=request.provider
             )
