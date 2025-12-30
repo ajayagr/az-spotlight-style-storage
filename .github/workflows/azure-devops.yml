@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feature/integrated-stylesync
 
 env:
   AZURE_WEBAPP_NAME: file-app-ag-3035  # Your Web App Name
