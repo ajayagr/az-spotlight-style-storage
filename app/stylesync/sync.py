@@ -15,6 +15,21 @@ logger = logging.getLogger(__name__)
 VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
 
 
+def sanitize_folder_name(name: str) -> str:
+    """
+    Sanitize a string to be used as a folder name.
+    Replaces spaces with underscores and removes invalid characters.
+    """
+    # Replace spaces with underscores
+    sanitized = name.replace(' ', '_')
+    # Remove characters that are invalid in folder names
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        sanitized = sanitized.replace(char, '')
+    # Convert to lowercase for consistency
+    return sanitized.lower().strip('_')
+
+
 @dataclass
 class StyleConfig:
     """Configuration for a style transformation."""
@@ -31,6 +46,7 @@ class SyncTask:
     source_name: str
     style: StyleConfig
     output_filename: str
+    style_folder: str  # Sanitized style name for folder path
 
 
 @dataclass
@@ -105,16 +121,18 @@ class StyleSyncService:
         
         for item in valid_images:
             for style in styles:
-                name_parts = item["name"].rsplit('.', 1)
-                stem = name_parts[0]
-                suffix = f".{name_parts[1]}" if len(name_parts) > 1 else ""
+                # Use original filename, organized by style folder
+                style_folder = sanitize_folder_name(style.name)
+                output_filename = item["name"]  # Keep original filename
                 
-                output_filename = f"{stem}_{style.index}{suffix}"
-                expected_state[output_filename] = SyncTask(
+                # Unique key combines style folder and filename
+                state_key = f"{style_folder}/{output_filename}"
+                expected_state[state_key] = SyncTask(
                     source_path=item["path"],
                     source_name=item["name"],
                     style=style,
-                    output_filename=output_filename
+                    output_filename=output_filename,
+                    style_folder=style_folder
                 )
                 
         return expected_state
@@ -133,8 +151,9 @@ class StyleSyncService:
         missing_tasks = []
         existing_files = set(self.storage.list_files())
         
-        for filename, task in expected_state.items():
-            target_path = f"{output_path.strip('/')}/{filename}"
+        for state_key, task in expected_state.items():
+            # Path format: output_path/style_folder/original_filename
+            target_path = f"{output_path.strip('/')}/{task.style_folder}/{task.output_filename}"
             
             if target_path not in existing_files:
                 missing_tasks.append(task)
@@ -221,14 +240,14 @@ class StyleSyncService:
                     )
                     
                     if gen_result.success:
-                        # Write to output
-                        target_path = f"{output_path.strip('/')}/{task.output_filename}"
+                        # Write to output: output_path/style_folder/original_filename
+                        target_path = f"{output_path.strip('/')}/{task.style_folder}/{task.output_filename}"
                         self.storage.upload_file(target_path, gen_result.data)
-                        result.processed.append(task.output_filename)
-                        logger.info(f"Successfully processed: {task.output_filename}")
+                        result.processed.append(f"{task.style_folder}/{task.output_filename}")
+                        logger.info(f"Successfully processed: {task.style_folder}/{task.output_filename}")
                     else:
-                        result.failed.append(task.output_filename)
-                        logger.warning(f"Failed to process: {task.output_filename} - {gen_result.response_info}")
+                        result.failed.append(f"{task.style_folder}/{task.output_filename}")
+                        logger.warning(f"Failed to process: {task.style_folder}/{task.output_filename} - {gen_result.response_info}")
                         
                 except Exception as e:
                     logger.error(f"Error processing {task.output_filename}: {e}")
