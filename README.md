@@ -253,6 +253,8 @@ curl -X DELETE "http://localhost:8000/files/images/photo.jpg" \
 
 The integrated StyleSync service provides AI-powered image style transfer capabilities directly within the FastAPI application.
 
+**Style Configuration**: Styles are configured in the `styles.json` file at the project root. The API reads styles from this file, so you don't need to include them in each request.
+
 ---
 
 ### 6. Run StyleSync (Synchronous)
@@ -269,38 +271,17 @@ Execute style transformation synchronously. Waits for all images to be processed
 ```json
 {
   "source_path": "originals/",
-  "output_path": "styled/",
-  "provider": "azure",
-  "styles": [
-    {
-      "index": 1,
-      "name": "Watercolor",
-      "prompt_text": "Transform this image into a beautiful watercolor painting with soft brushstrokes",
-      "strength": 0.7
-    },
-    {
-      "index": 2,
-      "name": "Oil Painting",
-      "prompt_text": "Convert this image to an oil painting with rich textures and vibrant colors",
-      "strength": 0.8
-    }
-  ]
+  "output_path": "styled/"
 }
 ```
 
 **Parameters**:
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `source_path` | string | No | Path prefix for source images (default: `""`) |
-| `output_path` | string | No | Output path prefix (default: `styled/`) |
+| `source_path` | string | No | Path prefix for source images. Falls back to `STYLE_SYNC_DEFAULT_SOURCE_FOLDER` env var (default: `""`) |
+| `output_path` | string | No | Output path prefix. Falls back to `STYLE_SYNC_DEFAULT_TARGET_FOLDER` env var (default: `styled/`) |
 
-**Style Object**:
-| Field | Type | Description |
-|-------|------|-------------|
-| `index` | number | Unique style index (used in output filename) |
-| `name` | string | Human-readable style name |
-| `prompt_text` | string | AI prompt describing the style transformation |
-| `strength` | number | Style intensity (0.0 - 1.0, default: 0.7) |
+> **Note**: If both request parameters and environment variables are empty, the service will process images from the root of storage.
 
 **Example**:
 ```bash
@@ -319,10 +300,25 @@ curl -X POST "http://localhost:8000/stylesync" \
   "status": "completed",
   "source": "photos/",
   "output": "styled-photos/",
-  "processed": ["photo1_1.jpg", "photo2_1.jpg"],
+  "processed": ["watercolor/photo1.jpg", "oil_painting/photo1.jpg"],
   "failed": [],
-  "skipped": ["photo3_1.jpg"]
+  "skipped": ["watercolor/photo2.jpg"]
 }
+```
+
+**Output Structure**:
+Processed images are organized by style folder:
+```
+styled-photos/
+├── original/           # Copy of source images
+│   ├── photo1.jpg
+│   └── photo2.jpg
+├── watercolor/         # Style 1 outputs
+│   ├── photo1.jpg
+│   └── photo2.jpg
+└── oil_painting/       # Style 2 outputs
+    ├── photo1.jpg
+    └── photo2.jpg
 ```
 
 ---
@@ -344,7 +340,7 @@ Execute style transformation as a background job. Returns immediately with a job
 curl -X POST "http://localhost:8000/stylesync/async" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"source_path": "photos/", "styles": [{"index": 1, "name": "Art", "prompt_text": "artistic style", "strength": 0.7}]}'
+  -d '{"source_path": "photos/", "output_path": "styled/"}'
 ```
 
 **Response**:
@@ -353,6 +349,7 @@ curl -X POST "http://localhost:8000/stylesync/async" \
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "started",
   "message": "StyleSync job started. Use GET /stylesync/status/{job_id} to check progress."
+}
 }
 ```
 
@@ -428,7 +425,53 @@ curl "http://localhost:8000/stylesync/images?source_path=photos/"
 
 ---
 
-### 10. List AI Providers
+### 10. Get Configured Styles
+
+```http
+GET /stylesync/styles
+```
+
+Get the list of styles configured in `styles.json` that will be applied during StyleSync.
+
+**Authentication**: Not required
+
+**Example**:
+```bash
+curl "http://localhost:8000/stylesync/styles"
+```
+
+**Response**:
+```json
+{
+  "count": 3,
+  "styles": [
+    {
+      "index": 1,
+      "name": "Geometric 3D",
+      "prompt_text": "Transform this image into a geometric 3D art style...",
+      "strength": 0.7
+    },
+    {
+      "index": 2,
+      "name": "Animated",
+      "prompt_text": "Convert this image to an animated cartoon style...",
+      "strength": 0.75
+    }
+  ]
+}
+```
+
+**Style Object Properties**:
+| Field | Type | Description |
+|-------|------|-------------|
+| `index` | number | Unique style identifier |
+| `name` | string | Human-readable style name (used for output folder) |
+| `prompt_text` | string | AI prompt describing the style transformation |
+| `strength` | number | Style intensity (0.0 - 1.0) |
+
+---
+
+### 11. List AI Providers
 
 ```http
 GET /stylesync/providers
@@ -474,6 +517,8 @@ curl "http://localhost:8000/stylesync/providers"
 | `AZURE_STORAGE_CONNECTION_STRING` | No | - | Azure Storage connection string. If not set, uses local storage |
 | `CONTAINER_NAME` | No | `file-container` | Azure Blob container name |
 | `API_KEY` | No | `default-insecure-key` | API key for protected endpoints |
+| `STYLE_SYNC_DEFAULT_SOURCE_FOLDER` | No | `""` | Default source path for StyleSync when not specified in request |
+| `STYLE_SYNC_DEFAULT_TARGET_FOLDER` | No | `styled/` | Default output path for StyleSync when not specified in request |
 
 ### Azure OpenAI Provider Configuration
 
@@ -517,7 +562,51 @@ export AZURE_OPENAI_MODEL="flux.1-kontext-pro"  # Optional, this is the default
 
 ---
 
-## 📝 Usage Examples
+## � Style Configuration (styles.json)
+
+StyleSync reads style definitions from the `styles.json` file in the project root. This file defines what transformations will be applied to your images.
+
+**File Location**: `./styles.json`
+
+**Example styles.json**:
+```json
+{
+  "styles": [
+    {
+      "index": 1,
+      "name": "Geometric 3D",
+      "prompt_text": "Transform this image into a geometric 3D art style with bold shapes and vibrant colors",
+      "strength": 0.7
+    },
+    {
+      "index": 2,
+      "name": "Animated",
+      "prompt_text": "Convert this image to an animated cartoon style with smooth lines and expressive features",
+      "strength": 0.75
+    },
+    {
+      "index": 3,
+      "name": "Vintage",
+      "prompt_text": "Apply a vintage film photography look with muted colors and subtle grain",
+      "strength": 0.6
+    }
+  ]
+}
+```
+
+**Style Properties**:
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `index` | number | Yes | Unique identifier for the style |
+| `name` | string | Yes | Human-readable name (used as output folder name) |
+| `prompt_text` | string | Yes | AI prompt describing the desired transformation |
+| `strength` | number | No | Style intensity from 0.0 to 1.0 (default: 0.7) |
+
+> **Tip**: The `name` field is sanitized and used as the output folder name. Spaces are converted to underscores and special characters are removed.
+
+---
+
+## �📝 Usage Examples
 
 ### Upload and Retrieve Images
 
@@ -535,17 +624,13 @@ curl "http://localhost:8000/files/photos/vacation.jpg" --output vacation.jpg
 
 ```bash
 # Run StyleSync to transform all images in photos/
+# Styles are loaded from styles.json
 curl -X POST "http://localhost:8000/stylesync" \
   -H "X-API-Key: my-api-key" \
   -H "Content-Type: application/json" \
   -d '{
     "source_path": "photos/",
-    "output_path": "styled-photos/",
-    "provider": "azure",
-    "styles": [
-      {"index": 1, "name": "Anime", "prompt_text": "Convert to anime style artwork", "strength": 0.8},
-      {"index": 2, "name": "Watercolor", "prompt_text": "Transform into watercolor painting", "strength": 0.7}
-    ]
+    "output_path": "styled-photos/"
   }'
 ```
 
@@ -556,7 +641,7 @@ curl -X POST "http://localhost:8000/stylesync" \
 JOB_RESPONSE=$(curl -s -X POST "http://localhost:8000/stylesync/async" \
   -H "X-API-Key: my-api-key" \
   -H "Content-Type: application/json" \
-  -d '{"source_path": "photos/", "styles": [{"index": 1, "name": "Art", "prompt_text": "artistic", "strength": 0.7}]}')
+  -d '{"source_path": "photos/", "output_path": "styled/"}')
 
 # Extract job ID and check status
 JOB_ID=$(echo $JOB_RESPONSE | jq -r '.job_id')
