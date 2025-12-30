@@ -762,7 +762,7 @@
                     // Still running, continue polling
                     attempts++;
                     if (attempts < maxAttempts) {
-                        setTimeout(poll, 2000);
+                        setTimeout(poll, 10000);
                     }
                 }
             } catch (error) {
@@ -771,7 +771,7 @@
         };
         
         // Start polling after a brief delay
-        setTimeout(poll, 3000);
+        setTimeout(poll, 10000);
     }
 
     // Styles Modal functions
