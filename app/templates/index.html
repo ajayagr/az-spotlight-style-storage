@@ -553,13 +553,60 @@
     async function deleteFile(filename, event) {
         if (event) event.stopPropagation();
         const key = apiKeyInput.value;
+        const runStyleSync = styleSyncToggle.checked;
+        
         if(!key) { alert("Please enter an API Key to delete."); return; }
         if(!confirm(`Are you sure you want to delete "${filename}"?`)) return;
+        
+        // Check if it's an image file
+        const isImage = filename.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i);
+        
         try {
+            showOverlay('Deleting File...', filename);
+            updateProgress(50, 'Removing file...');
+            
             const response = await fetch(`/files/${filename}`, { method: 'DELETE', headers: { 'X-API-Key': key } });
-            if(response.ok) location.reload();
-            else { const err = await response.json(); alert("Delete Failed: " + (err.detail || response.statusText)); }
-        } catch (error) { console.error(error); alert("Error deleting file."); }
+            
+            if(response.ok) {
+                updateProgress(100, 'File deleted');
+                
+                // Run StyleSync if enabled and deleted file was an image
+                if (runStyleSync && isImage) {
+                    uploadTitle.textContent = 'Running StyleSync...';
+                    uploadStatus.textContent = 'Updating styled images...';
+                    statusIcon.className = 'fas fa-magic status-icon loading';
+                    uploadDetails.textContent = 'Syncing to remove orphaned styled versions...';
+                    
+                    try {
+                        const syncResponse = await fetch('/stylesync/async', {
+                            method: 'POST',
+                            headers: { 'X-API-Key': key, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({})
+                        });
+                        
+                        if (syncResponse.ok) {
+                            const result = await syncResponse.json();
+                            showSuccess('Delete Complete!', `File deleted. StyleSync job started (ID: ${result.job_id.substring(0,8)}...)`);
+                            uploadDetails.textContent = 'StyleSync is running in the background.';
+                        } else {
+                            showSuccess('Delete Complete!', 'File deleted. StyleSync failed to start.');
+                        }
+                    } catch (error) {
+                        console.error('StyleSync error:', error);
+                        showSuccess('Delete Complete!', 'File deleted. StyleSync encountered an error.');
+                    }
+                } else {
+                    showSuccess('Delete Complete!', 'File deleted successfully.');
+                    uploadDetails.textContent = '';
+                }
+            } else {
+                const err = await response.json();
+                showError('Delete Failed', err.detail || response.statusText);
+            }
+        } catch (error) {
+            console.error(error);
+            showError('Delete Failed', 'Error deleting file.');
+        }
     }
 </script>
 
