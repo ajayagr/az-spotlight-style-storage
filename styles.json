@@ -1,0 +1,22 @@
+{
+  "styles": [
+    {
+      "index": 1,
+      "name": "Geometric 3D",
+      "prompt_text": "Transform this image into a geometric 3D art style with polygonal shapes, low-poly aesthetics, sharp angular forms, and vibrant faceted surfaces with depth and dimension",
+      "strength": 0.75
+    },
+    {
+      "index": 2,
+      "name": "Animated",
+      "prompt_text": "Convert this image into a high-quality animated cartoon style, similar to Pixar or Disney animation, with smooth gradients, expressive features, vibrant colors, and clean stylized rendering",
+      "strength": 0.8
+    },
+    {
+      "index": 3,
+      "name": "Vintage",
+      "prompt_text": "Transform this image into a vintage retro style with sepia tones, film grain texture, faded colors, vignette edges, and nostalgic 1950s aesthetic reminiscent of old photographs",
+      "strength": 0.7
+    }
+  ]
+}
