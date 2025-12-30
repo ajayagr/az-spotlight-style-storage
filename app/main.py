@@ -170,14 +170,12 @@ class StyleSyncRequest(BaseModel):
     """Request body for StyleSync operation."""
     source_path: Optional[str] = Field(default=None, description="Source directory path containing images. Falls back to STYLE_SYNC_DEFAULT_SOURCE_FOLDER env var if not provided.")
     output_path: Optional[str] = Field(default=None, description="Output directory for styled images. Falls back to STYLE_SYNC_DEFAULT_TARGET_FOLDER env var if not provided.")
-    provider: str = Field(default="azure", description="AI provider: 'azure' or 'stability'")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "source_path": "originals/",
-                "output_path": "styled/",
-                "provider": "azure"
+                "output_path": "styled/"
             }
         }
 
@@ -226,7 +224,7 @@ def run_stylesync(
             source_path=source_path,
             output_path=output_path,
             styles=styles,
-            provider=request.provider
+            provider="azure"
         )
         
         return StyleSyncResponse(
@@ -293,7 +291,7 @@ async def run_stylesync_async(
                 source_path=source_path,
                 output_path=output_path,
                 styles=styles,
-                provider=request.provider
+                provider="azure"
             )
             sync_jobs[job_id] = {
                 "status": result.status,
@@ -381,10 +379,8 @@ def list_providers():
     List available AI providers and their configuration status.
     """
     from .stylesync.clients.azure import AzureGenerator
-    from .stylesync.clients.stability import StabilityGenerator
     
     azure_gen = AzureGenerator()
-    stability_gen = StabilityGenerator()
     
     return {
         "providers": [
@@ -401,13 +397,6 @@ def list_providers():
                     f"{AzureGenerator.ENV_MODEL} (default: {AzureGenerator.DEFAULT_MODEL})"
                 ],
                 "missing": azure_gen.get_missing_config() if not azure_gen.is_configured() else []
-            },
-            {
-                "name": "stability",
-                "description": "Stability AI with Stable Diffusion XL",
-                "configured": stability_gen.is_configured(),
-                "required_env_vars": ["STABILITY_API_KEY"],
-                "missing": ["STABILITY_API_KEY"] if not stability_gen.is_configured() else []
             }
         ]
     }

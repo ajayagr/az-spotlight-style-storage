@@ -3,14 +3,14 @@ StyleSync AI Generator Clients
 """
 from .base import BaseGenerator, GeneratorResult
 from .azure import AzureGenerator
-from .stability import StabilityGenerator
 
-def get_generator(provider: str) -> BaseGenerator:
+
+def get_generator(provider: str = "azure") -> BaseGenerator:
     """
     Factory function to get the appropriate generator.
     
     Args:
-        provider: 'azure' or 'stability'
+        provider: 'azure' (only Azure is currently supported)
     
     Returns:
         BaseGenerator instance
@@ -18,9 +18,7 @@ def get_generator(provider: str) -> BaseGenerator:
     provider = provider.lower()
     if provider == "azure":
         return AzureGenerator()
-    elif provider == "stability":
-        return StabilityGenerator()
     else:
-        raise ValueError(f"Unknown provider: {provider}. Use 'azure' or 'stability'.")
+        raise ValueError(f"Unknown provider: {provider}. Use 'azure'.")
 
-__all__ = ["get_generator", "GeneratorResult", "BaseGenerator"]
+__all__ = ["get_generator", "GeneratorResult", "BaseGenerator", "AzureGenerator"]

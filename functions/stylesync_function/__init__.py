@@ -69,7 +69,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     source_provider = AzureBlobStorageProvider(connection_string, source_container)
     output_provider = AzureBlobStorageProvider(connection_string, output_container)
     
-    # Initialize Generator (Azure Computer Vision / Stability)
+    # Initialize Generator (Azure OpenAI)
     try:
         generator = get_generator(provider_name)
     except ValueError as e:

@@ -174,7 +174,7 @@ class StyleSyncService:
             source_path: Source directory containing images
             output_path: Output directory for styled images
             styles: List of style configuration dicts
-            provider: AI provider ('azure' or 'stability')
+            provider: AI provider (currently only 'azure' is supported)
             
         Returns:
             SyncResult with operation details

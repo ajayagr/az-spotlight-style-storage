@@ -1,6 +1,6 @@
 # Azure Spotlight Style Storage
 
-A comprehensive Azure-based file storage and AI image style transfer application. This project provides a FastAPI web application for file management with Azure Blob Storage, featuring integrated AI-powered image style transformations using Azure AI or Stability AI.
+A comprehensive Azure-based file storage and AI image style transfer application. This project provides a FastAPI web application for file management with Azure Blob Storage, featuring integrated AI-powered image style transformations using Azure OpenAI.
 
 ## 🌟 Features
 
@@ -8,7 +8,7 @@ A comprehensive Azure-based file storage and AI image style transfer application
 - **File Management API**: RESTful API for uploading, downloading, listing, and deleting files
 - **Web UI**: Built-in file explorer interface with grid/list view toggle
 - **Integrated AI Style Transfer**: Built-in StyleSync service for batch processing images with AI-generated styles
-- **Multiple AI Providers**: Support for Azure AI (Flux) and Stability AI for image generation
+- **Azure OpenAI Integration**: Uses Azure OpenAI Flux model for high-quality image generation
 - **Sync & Async Operations**: Run style transfers synchronously or as background jobs
 - **API Key Authentication**: Secure endpoints with configurable API key protection
 - **Docker Support**: Ready-to-deploy containerized application
@@ -30,8 +30,7 @@ az-spotlight-style-storage/
 │       └── clients/                  # AI generator clients
 │           ├── __init__.py           # Client factory
 │           ├── base.py               # Base generator class
-│           ├── azure.py              # Azure AI generator
-│           └── stability.py          # Stability AI generator
+│           └── azure.py              # Azure OpenAI generator
 ├── Dockerfile                        # Container configuration
 ├── requirements.txt                  # Python dependencies
 └── sample.REST                       # Sample API requests
@@ -45,7 +44,7 @@ az-spotlight-style-storage/
 
 - Python 3.9+
 - Azure Storage Account (optional, for cloud storage)
-- Azure AI or Stability AI API keys (for style transfer function)
+- Azure OpenAI API access (for style transfer function)
 
 ### Installation
 
@@ -294,8 +293,6 @@ Execute style transformation synchronously. Waits for all images to be processed
 |-----------|------|----------|-------------|
 | `source_path` | string | No | Path prefix for source images (default: `""`) |
 | `output_path` | string | No | Output path prefix (default: `styled/`) |
-| `provider` | string | No | AI provider: `azure` or `stability` (default: `azure`) |
-| `styles` | array | Yes | Array of style configurations |
 
 **Style Object**:
 | Field | Type | Description |
@@ -312,11 +309,7 @@ curl -X POST "http://localhost:8000/stylesync" \
   -H "Content-Type: application/json" \
   -d '{
     "source_path": "photos/",
-    "output_path": "styled-photos/",
-    "provider": "azure",
-    "styles": [
-      {"index": 1, "name": "Anime", "prompt_text": "Convert to anime style artwork", "strength": 0.8}
-    ]
+    "output_path": "styled-photos/"
   }'
 ```
 
@@ -456,15 +449,9 @@ curl "http://localhost:8000/stylesync/providers"
   "providers": [
     {
       "name": "azure",
-      "description": "Azure AI with Flux model",
+      "description": "Azure OpenAI with Flux model",
       "configured": true,
-      "required_env_vars": ["AZURE_ENDPOINT_URL", "AZURE_API_KEY"]
-    },
-    {
-      "name": "stability",
-      "description": "Stability AI with Stable Diffusion XL",
-      "configured": false,
-      "required_env_vars": ["STABILITY_API_KEY"]
+      "required_env_vars": ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"]
     }
   ]
 }
@@ -496,15 +483,7 @@ curl "http://localhost:8000/stylesync/providers"
 | `AZURE_OPENAI_API_KEY` | Yes* | - | Azure OpenAI API key |
 | `AZURE_OPENAI_MODEL` | No | `flux.1-kontext-pro` | Model deployment name to use |
 
-*Required when using the `azure` provider for StyleSync
-
-### Stability AI Provider Configuration
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `STABILITY_API_KEY` | Yes* | - | Stability AI API key from [platform.stability.ai](https://platform.stability.ai) |
-
-*Required when using the `stability` provider for StyleSync
+*Required when using StyleSync
 
 ---
 
@@ -524,9 +503,9 @@ When no connection string is provided, files are stored locally:
 
 ---
 
-## 🎨 AI Providers
+## 🎨 AI Provider
 
-### Azure AI (Flux)
+### Azure OpenAI (Flux)
 Uses the Flux.1-Kontext-Pro model (or custom model) for high-quality image transformations.
 
 **Configuration**:
@@ -534,14 +513,6 @@ Uses the Flux.1-Kontext-Pro model (or custom model) for high-quality image trans
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/openai/deployments/your-deployment/images/generations?api-version=2024-02-01"
 export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
 export AZURE_OPENAI_MODEL="flux.1-kontext-pro"  # Optional, this is the default
-```
-
-### Stability AI
-Uses Stable Diffusion XL for image-to-image style transfer.
-
-**Configuration**:
-```bash
-export STABILITY_API_KEY="your-stability-api-key"
 ```
 
 ---
