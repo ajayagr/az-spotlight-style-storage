@@ -350,7 +350,6 @@ curl -X POST "http://localhost:8000/stylesync/async" \
   "status": "started",
   "message": "StyleSync job started. Use GET /stylesync/status/{job_id} to check progress."
 }
-}
 ```
 
 ---
@@ -562,7 +561,7 @@ export AZURE_OPENAI_MODEL="flux.1-kontext-pro"  # Optional, this is the default
 
 ---
 
-## � Style Configuration (styles.json)
+## 📋 Style Configuration (styles.json)
 
 StyleSync reads style definitions from the `styles.json` file in the project root. This file defines what transformations will be applied to your images.
 
@@ -606,7 +605,7 @@ StyleSync reads style definitions from the `styles.json` file in the project roo
 
 ---
 
-## �📝 Usage Examples
+## 📝 Usage Examples
 
 ### Upload and Retrieve Images
 
