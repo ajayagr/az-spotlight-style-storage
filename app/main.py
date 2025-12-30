@@ -1,5 +1,7 @@
 import os
+import json
 import logging
+from pathlib import Path
 from fastapi import FastAPI, UploadFile, HTTPException, File, Depends, Header, Query, Request, BackgroundTasks
 from fastapi.responses import Response, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +15,22 @@ import mimetypes
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Styles configuration file path
+STYLES_FILE_PATH = Path(__file__).parent.parent / "styles.json"
+
+
+def load_styles_from_file() -> List[dict]:
+    """
+    Load style configurations from styles.json file.
+    """
+    if not STYLES_FILE_PATH.exists():
+        raise FileNotFoundError(f"Styles file not found: {STYLES_FILE_PATH}")
+    
+    with open(STYLES_FILE_PATH, "r") as f:
+        data = json.load(f)
+    
+    return data.get("styles", [])
 
 app = FastAPI(
     title="Azure File Storage App",
@@ -144,19 +162,10 @@ def delete_file(
 # StyleSync API Endpoints
 # =============================================================================
 
-class StyleDefinition(BaseModel):
-    """Style configuration for image transformation."""
-    index: int = Field(..., description="Unique style index (used in output filename)")
-    name: str = Field(..., description="Human-readable style name")
-    prompt_text: str = Field(..., description="AI prompt describing the style transformation")
-    strength: float = Field(default=0.7, ge=0.0, le=1.0, description="Style intensity (0.0 - 1.0)")
-
-
 class StyleSyncRequest(BaseModel):
     """Request body for StyleSync operation."""
     source_path: str = Field(default="", description="Source directory path containing images")
     output_path: str = Field(default="styled/", description="Output directory for styled images")
-    styles: List[StyleDefinition] = Field(..., description="List of style configurations to apply")
     provider: str = Field(default="azure", description="AI provider: 'azure' or 'stability'")
     
     class Config:
@@ -164,15 +173,7 @@ class StyleSyncRequest(BaseModel):
             "example": {
                 "source_path": "originals/",
                 "output_path": "styled/",
-                "provider": "azure",
-                "styles": [
-                    {
-                        "index": 1,
-                        "name": "Watercolor",
-                        "prompt_text": "Transform this image into a beautiful watercolor painting",
-                        "strength": 0.7
-                    }
-                ]
+                "provider": "azure"
             }
         }
 
@@ -201,14 +202,17 @@ def run_stylesync(
     Execute StyleSync operation synchronously.
     
     Applies AI style transformations to images in the source path
-    and saves results to the output path. This operation runs synchronously
-    and may take time depending on the number of images.
+    and saves results to the output path. Styles are loaded from styles.json.
+    This operation runs synchronously and may take time depending on the number of images.
     
     Requires API Key authentication.
     """
     try:
-        # Convert Pydantic models to dicts
-        styles = [s.model_dump() for s in request.styles]
+        # Load styles from file
+        styles = load_styles_from_file()
+        
+        if not styles:
+            raise HTTPException(status_code=400, detail="No styles configured in styles.json")
         
         result = stylesync_service.process_sync(
             source_path=request.source_path,
@@ -227,6 +231,9 @@ def run_stylesync(
             error=result.error
         )
         
+    except FileNotFoundError as e:
+        logger.error(f"Styles file not found: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         logger.error(f"StyleSync error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -241,13 +248,21 @@ async def run_stylesync_async(
     """
     Execute StyleSync operation asynchronously in the background.
     
-    Returns immediately with a job ID. Use GET /stylesync/status/{job_id}
-    to check the status of the operation.
+    Styles are loaded from styles.json. Returns immediately with a job ID.
+    Use GET /stylesync/status/{job_id} to check the status of the operation.
     
     Requires API Key authentication.
     """
     import uuid
     job_id = str(uuid.uuid4())
+    
+    # Load styles from file (validate before starting job)
+    try:
+        styles = load_styles_from_file()
+        if not styles:
+            raise HTTPException(status_code=400, detail="No styles configured in styles.json")
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
     # Initialize job status
     sync_jobs[job_id] = {
@@ -262,7 +277,6 @@ async def run_stylesync_async(
     
     def run_sync_job():
         try:
-            styles = [s.model_dump() for s in request.styles]
             result = stylesync_service.process_sync(
                 source_path=request.source_path,
                 output_path=request.output_path,
@@ -328,6 +342,25 @@ def list_styleable_images(
         "count": len(images),
         "images": images
     }
+
+
+@app.get("/stylesync/styles", tags=["StyleSync"])
+def get_configured_styles():
+    """
+    Get the list of configured styles from styles.json.
+    
+    Returns all style configurations that will be applied during StyleSync.
+    """
+    try:
+        styles = load_styles_from_file()
+        return {
+            "count": len(styles),
+            "styles": styles
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/stylesync/providers", tags=["StyleSync"])
