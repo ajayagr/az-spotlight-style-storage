@@ -38,6 +38,26 @@ def load_styles_from_file() -> List[dict]:
     
     return data.get("styles", [])
 
+
+def sanitize_style_name(name: str) -> str:
+    """
+    Sanitize a style name for case-insensitive comparison.
+    Removes spaces, underscores, hyphens and converts to lowercase.
+    """
+    return name.lower().replace(" ", "").replace("_", "").replace("-", "")
+
+
+def find_style_by_name(styles: List[dict], style_name: str) -> dict:
+    """
+    Find a style by name using case-insensitive and sanitized matching.
+    Returns None if no match found.
+    """
+    sanitized_input = sanitize_style_name(style_name)
+    for s in styles:
+        if sanitize_style_name(s.get("name", "")) == sanitized_input:
+            return s
+    return None
+
 app = FastAPI(
     title="Azure File Storage App",
     description="File storage with AI-powered style transfer capabilities",
@@ -199,9 +219,9 @@ def get_styled_file(
     If style is not found, returns the original image.
     Returns 404 if no matching file exists.
     """
-    # Load styles to validate style and get folder_name
+    # Load styles to validate style and get folder_name (case-insensitive)
     styles = load_styles_from_file()
-    style_config = next((s for s in styles if s.get("name") == style), None)
+    style_config = find_style_by_name(styles, style)
     
     # Get icon from style config (empty if style not found)
     icon_name = style_config.get("icon", "") if style_config else ""
@@ -271,9 +291,9 @@ def get_next_image(
     Get a random next image for the given style, excluding the current image.
     If style is not found, returns a random original image.
     """
-    # Load styles to validate style and get folder_name
+    # Load styles to validate style and get folder_name (case-insensitive)
     styles = load_styles_from_file()
-    style_config = next((s for s in styles if s.get("name") == style), None)
+    style_config = find_style_by_name(styles, style)
     
     # Get icon from style config (empty if style not found)
     icon_name = style_config.get("icon", "") if style_config else ""

@@ -301,32 +301,33 @@ Get the path for a styled file if it exists, along with the icon path.
 **Parameters**:
 | Parameter | Type | Location | Description |
 |-----------|------|----------|-------------|
-| `style` | string | query | The style name (e.g., "Geometric 3D") (required) |
+| `style` | string | query | The style name (e.g., "Geometric3D"). Case-insensitive. (required) |
 | `id` | string | query | The image filename to look up. Use `-1` to get a random image. (required) |
 
 **Behavior**:
+- Style matching is **case-insensitive** and ignores spaces, underscores, and hyphens
 - If `id` is `-1`: Returns a random image from the style folder
 - If `style` is not found: Returns the original image from the source folder instead
 
 **Example - Specific file**:
 ```bash
-curl "http://localhost:8000/images/styled?style=Geometric%203D&id=photo1.jpg"
+curl "http://localhost:8000/images/styled?style=Geometric3D&id=photo1.jpg"
 ```
 
 **Example - Random image**:
 ```bash
-curl "http://localhost:8000/images/styled?style=Geometric%203D&id=-1"
+curl "http://localhost:8000/images/styled?style=geometric3d&id=-1"
 ```
 
 **Response** (200):
 ```json
 {
-  "style": "Geometric 3D",
+  "style": "Geometric3D",
   "style_folder": "geometric_3d",
   "file_path": "styled/geometric_3d/photo1.jpg",
   "id": "photo1.jpg",
-  "icon_path": "icons/shapes",
-  "icon_name": "shapes"
+  "icon_path": "icons/03_Geometic3D.webp",
+  "icon_name": "03_Geometic3D.webp"
 }
 ```
 
@@ -364,27 +365,28 @@ Get a random image for the given style, excluding the current image. Useful for 
 **Parameters**:
 | Parameter | Type | Location | Description |
 |-----------|------|----------|-------------|
-| `style` | string | query | The style name (e.g., "Geometric 3D") (required) |
+| `style` | string | query | The style name (e.g., "Geometric3D"). Case-insensitive. (required) |
 | `id` | string | query | The current image filename to exclude (required) |
 
 **Behavior**:
+- Style matching is **case-insensitive** and ignores spaces, underscores, and hyphens
 - Returns a random image from the style folder, excluding the current image
 - If `style` is not found: Returns a random original image instead
 
 **Example**:
 ```bash
-curl "http://localhost:8000/images/next?style=Geometric%203D&id=photo1.jpg"
+curl "http://localhost:8000/images/next?style=Geometric3D&id=photo1.jpg"
 ```
 
 **Response** (200):
 ```json
 {
-  "style": "Geometric 3D",
+  "style": "Geometric3D",
   "style_folder": "geometric_3d",
   "file_path": "styled/geometric_3d/photo5.jpg",
   "id": "photo5.jpg",
-  "icon_path": "icons/shapes",
-  "icon_name": "shapes",
+  "icon_path": "icons/03_Geometic3D.webp",
+  "icon_name": "03_Geometic3D.webp",
   "excluded": "photo1.jpg"
 }
 ```

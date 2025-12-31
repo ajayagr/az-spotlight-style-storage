@@ -1,25 +1,74 @@
 {
   "styles": [
     {
-      "name": "Geometric 3D",
+      "name": "Photorealistic",
+      "folder_name": "photorealistic",
+      "icon": "01_Photorealistic.webp",
+      "prompt_text": "Transform this image into a hyper-photorealistic style with extreme detail, natural lighting, lifelike textures, and authentic visual clarity that mimics high-end photography",
+      "strength": 0.7
+    },
+    {
+      "name": "ModernBrutalist",
+      "folder_name": "modern_brutalist",
+      "icon": "02_ModernBrutalist.webp",
+      "prompt_text": "Transform this image into a modern brutalist art style with raw concrete textures, bold geometric forms, stark minimalism, monolithic structures, and a powerful industrial aesthetic",
+      "strength": 0.75
+    },
+    {
+      "name": "Geometric3D",
       "folder_name": "geometric_3d",
-      "icon": "shapes",
+      "icon": "03_Geometic3D.webp",
       "prompt_text": "Transform this image into a geometric 3D art style with polygonal shapes, low-poly aesthetics, sharp angular forms, and vibrant faceted surfaces with depth and dimension",
       "strength": 0.75
     },
     {
-      "name": "Animated",
-      "folder_name": "animated",
-      "icon": "movie",
-      "prompt_text": "Transform this image into a high-quality animated cartoon style, similar to Pixar or Disney animation, with smooth gradients, expressive features, vibrant colors, and clean stylized rendering",
+      "name": "Surrealism",
+      "folder_name": "surrealism",
+      "icon": "04_Surrealism.webp",
+      "prompt_text": "Transform this image into a surrealist art style with dreamlike imagery, unexpected juxtapositions, melting forms, impossible perspectives, and fantastical elements inspired by Dalí and Magritte",
       "strength": 0.8
     },
     {
-      "name": "Vintage",
-      "folder_name": "vintage",
-      "icon": "camera_roll",
-      "prompt_text": "Transform this image into a vintage retro style with sepia tones, film grain texture, faded colors, vignette edges, and nostalgic 1950s aesthetic reminiscent of old photographs",
+      "name": "Whimsical3D",
+      "folder_name": "whimsical_3d",
+      "icon": "05_Whimsical3D.webp",
+      "prompt_text": "Transform this image into a whimsical 3D style with playful cartoon-like characters, soft rounded forms, pastel colors, cute proportions, and a magical fairy-tale aesthetic",
+      "strength": 0.8
+    },
+    {
+      "name": "NeonArt",
+      "folder_name": "neon_art",
+      "icon": "06_NeonArt.webp",
+      "prompt_text": "Transform this image into a vibrant neon art style with glowing neon lights, electric colors, dark backgrounds, luminous outlines, and a retro-futuristic nightlife atmosphere",
+      "strength": 0.75
+    },
+    {
+      "name": "Cyberpunk",
+      "folder_name": "cyberpunk",
+      "icon": "07_Cyberpunk.webp",
+      "prompt_text": "Transform this image into a cyberpunk style with neon-lit cityscapes, high-tech low-life aesthetics, holographic elements, rain-slicked streets, and a dystopian futuristic atmosphere",
+      "strength": 0.8
+    },
+    {
+      "name": "Cinematic",
+      "folder_name": "cinematic",
+      "icon": "08_Cinematic.webp",
+      "prompt_text": "Transform this image into a cinematic style with dramatic lighting, film color grading, widescreen composition, bokeh effects, and the visual quality of a Hollywood movie still",
       "strength": 0.7
+    },
+    {
+      "name": "Anime",
+      "folder_name": "anime",
+      "icon": "09_Anime.webp",
+      "prompt_text": "Transform this image into a Japanese anime style with large expressive eyes, vibrant hair colors, clean line art, cel-shading, and dynamic poses typical of manga and anime",
+      "strength": 0.8
+    },
+    {
+      "name": "FlatDesign",
+      "folder_name": "flat_design",
+      "icon": "10_FlatDesign.webp",
+      "prompt_text": "Transform this image into a flat design style with minimal shadows, bold solid colors, simple geometric shapes, clean lines, and a modern minimalist vector illustration aesthetic",
+      "strength": 0.75
     }
   ]
 }
