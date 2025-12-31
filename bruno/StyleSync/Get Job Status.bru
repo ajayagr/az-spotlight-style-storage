@@ -1,0 +1,16 @@
+meta {
+  name: Get Job Status
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{host}}/stylesync/status/550e8400-e29b-41d4-a716-446655440000
+  body: none
+  auth: none
+}
+
+docs {
+  Check the status of a background StyleSync job.
+  Replace the job_id in the URL with the actual job ID returned from /stylesync/async.
+}

@@ -1,0 +1,25 @@
+meta {
+  name: Get Next Image
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/images/next
+  body: none
+  auth: none
+}
+
+params:query {
+  style: Geometric3D
+  id: photo1.jpg
+}
+
+docs {
+  Get the next random image from a styled folder, excluding the current image.
+  Useful for shuffle/next functionality in image viewers.
+  
+  Parameters:
+  - style: Style name (case-insensitive)
+  - id: Current filename to exclude from random selection
+}

@@ -1,0 +1,19 @@
+meta {
+  name: List All Files
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/files
+  body: none
+  auth: none
+}
+
+params:query {
+  ~path: originals/
+}
+
+docs {
+  List all files in storage. Optionally filter by path prefix.
+}

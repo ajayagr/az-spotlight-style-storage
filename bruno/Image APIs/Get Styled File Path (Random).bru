@@ -1,0 +1,21 @@
+meta {
+  name: Get Styled File Path (Random)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{host}}/images/styled
+  body: none
+  auth: none
+}
+
+params:query {
+  style: Cyberpunk
+  id: -1
+}
+
+docs {
+  Get a random image from a styled folder.
+  Use id=-1 to get a random image instead of a specific file.
+}

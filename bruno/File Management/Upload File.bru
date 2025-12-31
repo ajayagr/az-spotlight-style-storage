@@ -1,0 +1,24 @@
+meta {
+  name: Upload File
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/files/uploads/newfile.jpg
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  X-API-Key: {{api_key}}
+}
+
+body:multipart-form {
+  file: @file(./sample.jpg)
+}
+
+docs {
+  Upload a file to storage. Requires API key authentication.
+  The file path in the URL determines where the file will be stored.
+}

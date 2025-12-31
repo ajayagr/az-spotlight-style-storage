@@ -1,0 +1,15 @@
+meta {
+  name: Get Configured Styles
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}/stylesync/styles
+  body: none
+  auth: none
+}
+
+docs {
+  Get the list of styles configured in styles.json that will be applied during StyleSync.
+}

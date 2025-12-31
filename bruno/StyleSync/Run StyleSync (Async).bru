@@ -1,0 +1,29 @@
+meta {
+  name: Run StyleSync (Async)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/stylesync/async
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: {{api_key}}
+}
+
+body:json {
+  {
+    "source_path": "originals/",
+    "output_path": "styled/"
+  }
+}
+
+docs {
+  Execute style transformation as a background job.
+  Returns immediately with a job ID.
+  Use GET /stylesync/status/{job_id} to check progress.
+  Requires API key authentication.
+}

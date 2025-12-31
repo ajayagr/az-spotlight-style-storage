@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Azure Spotlight Style Storage",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

@@ -1,0 +1,16 @@
+meta {
+  name: List AI Providers
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}/stylesync/providers
+  body: none
+  auth: none
+}
+
+docs {
+  List available AI providers and their configuration status.
+  Shows which providers are configured and ready to use.
+}

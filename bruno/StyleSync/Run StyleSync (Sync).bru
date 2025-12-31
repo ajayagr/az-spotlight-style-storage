@@ -1,0 +1,28 @@
+meta {
+  name: Run StyleSync (Sync)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/stylesync
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: {{api_key}}
+}
+
+body:json {
+  {
+    "source_path": "originals/",
+    "output_path": "styled/"
+  }
+}
+
+docs {
+  Execute style transformation synchronously.
+  Waits for all images to be processed before returning.
+  Requires API key authentication.
+}

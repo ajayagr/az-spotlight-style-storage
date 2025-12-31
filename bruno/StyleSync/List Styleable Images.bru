@@ -1,0 +1,20 @@
+meta {
+  name: List Styleable Images
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/stylesync/images
+  body: none
+  auth: none
+}
+
+params:query {
+  ~source_path: originals/
+}
+
+docs {
+  List all valid images that can be styled from a source path.
+  Optional source_path parameter to filter images.
+}

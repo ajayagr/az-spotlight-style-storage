@@ -1,0 +1,20 @@
+meta {
+  name: Get Random Images
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/images/random
+  body: none
+  auth: none
+}
+
+params:query {
+  ~count: 4
+}
+
+docs {
+  Get random images from the source folder.
+  Optional count parameter (default: 4) to specify how many images to return.
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Get Styled File Path
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/images/styled
+  body: none
+  auth: none
+}
+
+params:query {
+  style: Geometric3D
+  id: photo1.jpg
+}
+
+docs {
+  Get the path for a styled version of an image.
+  
+  Parameters:
+  - style: Style name (case-insensitive, e.g., "Geometric3D", "geometric3d")
+  - id: Filename to look up, or -1 for a random image from the style folder
+  
+  Returns the file path, folder, and icon for the styled image.
+  Falls back to original folder if style not found.
+}

@@ -1,0 +1,19 @@
+meta {
+  name: Delete File
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{host}}/files/uploads/newfile.jpg
+  body: none
+  auth: none
+}
+
+headers {
+  X-API-Key: {{api_key}}
+}
+
+docs {
+  Delete a file from storage. Requires API key authentication.
+}
