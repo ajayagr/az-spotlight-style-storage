@@ -210,9 +210,40 @@
         .folder-header {
             font-size: 16px; font-weight: 600; color: var(--text-secondary);
             margin-bottom: 15px; display: flex; align-items: center; gap: 8px;
-            padding-bottom: 10px; border-bottom: 1px solid #eaeaea;
+            padding: 10px 12px; border-bottom: 1px solid #eaeaea;
+            cursor: pointer; user-select: none;
+            border-radius: 8px 8px 0 0;
+            transition: background-color 0.2s;
         }
-        .folder-header i { color: #ffc400; }
+        .folder-header:hover { background-color: #f5f5f5; }
+        .folder-header i.folder-icon { color: #ffc400; }
+        .folder-header .collapse-icon {
+            margin-left: auto; color: #999;
+            transition: transform 0.3s;
+        }
+        .folder-header.collapsed .collapse-icon { transform: rotate(-90deg); }
+        .folder-content {
+            transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+            overflow: hidden;
+        }
+        .folder-content.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            margin-bottom: 0;
+        }
+        .folder-file-count {
+            font-size: 12px; color: #999; font-weight: 400;
+            background: #eaeaea; padding: 2px 8px; border-radius: 10px;
+            margin-left: 8px;
+        }
+        .collapse-all-btn {
+            background: none; border: 1px solid var(--border-color);
+            padding: 6px 12px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s; margin-left: auto;
+        }
+        .collapse-all-btn:hover { background: #f5f5f5; border-color: var(--primary-color); color: var(--primary-color); }
         .hidden { display: none !important; }
 
         /* Upload Progress Overlay */
@@ -449,13 +480,32 @@
 
         folderViewEl.innerHTML = '';
 
+        // Add collapse all / expand all controls
+        if (Object.keys(folders).length > 0 || rootFiles.length > 0) {
+            const controls = document.createElement('div');
+            controls.style.cssText = 'display: flex; gap: 10px; margin-bottom: 20px;';
+            controls.innerHTML = `
+                <button class="collapse-all-btn" onclick="toggleAllFolders(true)">
+                    <i class="fas fa-compress-alt"></i> Collapse All
+                </button>
+                <button class="collapse-all-btn" onclick="toggleAllFolders(false)">
+                    <i class="fas fa-expand-alt"></i> Expand All
+                </button>
+            `;
+            folderViewEl.appendChild(controls);
+        }
+
         // Root Files First
         if (rootFiles.length > 0) {
             const section = document.createElement('div');
             section.className = 'folder-section';
-            section.innerHTML = `<div class="folder-header"><i class="fas fa-home"></i> Root</div>`;
+            section.innerHTML = `<div class="folder-header" onclick="toggleFolder(this)">
+                <i class="fas fa-home folder-icon"></i> Root
+                <span class="folder-file-count">${rootFiles.length} files</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>`;
             const grid = document.createElement('div');
-            grid.className = 'file-grid';
+            grid.className = 'file-grid folder-content';
             rootFiles.forEach(f => grid.appendChild(f));
             section.appendChild(grid);
             folderViewEl.appendChild(section);
@@ -465,9 +515,13 @@
         Object.keys(folders).sort().forEach(folderName => {
             const section = document.createElement('div');
             section.className = 'folder-section';
-            section.innerHTML = `<div class="folder-header"><i class="fas fa-folder"></i> ${folderName}</div>`;
+            section.innerHTML = `<div class="folder-header" onclick="toggleFolder(this)">
+                <i class="fas fa-folder folder-icon"></i> ${folderName}
+                <span class="folder-file-count">${folders[folderName].length} files</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>`;
             const grid = document.createElement('div');
-            grid.className = 'file-grid';
+            grid.className = 'file-grid folder-content';
             folders[folderName].forEach(f => grid.appendChild(f));
             section.appendChild(grid);
             folderViewEl.appendChild(section);
@@ -494,6 +548,25 @@
 
     // Initialize
     buildFolderView();
+
+    // Toggle individual folder collapse
+    function toggleFolder(headerEl) {
+        const content = headerEl.nextElementSibling;
+        const isCollapsed = headerEl.classList.toggle('collapsed');
+        content.classList.toggle('collapsed', isCollapsed);
+    }
+
+    // Toggle all folders collapse/expand
+    function toggleAllFolders(collapse) {
+        const headers = folderViewEl.querySelectorAll('.folder-header');
+        headers.forEach(header => {
+            const content = header.nextElementSibling;
+            if (content && content.classList.contains('folder-content')) {
+                header.classList.toggle('collapsed', collapse);
+                content.classList.toggle('collapsed', collapse);
+            }
+        });
+    }
 
     // Upload overlay elements
     const uploadOverlay = document.getElementById('uploadOverlay');
