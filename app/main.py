@@ -190,31 +190,31 @@ def get_random_images(count: int = Query(default=4, ge=1, le=20, description="Nu
 
 @app.get("/images/styled", tags=["Images"])
 def get_styled_file(
-    style_name: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),
-    filename: str = Query(..., description="The filename to look up. Use '-1' to get a random image.")
+    style: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),
+    id: str = Query(..., description="The image filename to look up. Use '-1' to get a random image.")
 ):
     """
     Get a styled file path and icon path by style name and filename.
-    If filename is '-1', returns a random image from the style folder.
+    If id is '-1', returns a random image from the style folder.
     If style is not found, returns the original image.
     Returns 404 if no matching file exists.
     """
-    # Load styles to validate style_name and get folder_name
+    # Load styles to validate style and get folder_name
     styles = load_styles_from_file()
-    style = next((s for s in styles if s.get("name") == style_name), None)
+    style_config = next((s for s in styles if s.get("name") == style), None)
     
     # Get icon from style config (empty if style not found)
-    icon_name = style.get("icon", "") if style else ""
+    icon_name = style_config.get("icon", "") if style_config else ""
     icon_folder = STYLE_SYNC_ICON_FOLDER.strip("/")
     icon_path = f"{icon_folder}/{icon_name}" if icon_folder and icon_name else icon_name
     
     # Determine the target folder based on whether style exists
-    if style:
+    if style_config:
         # Get the folder_name from the style config
-        style_folder = style.get("folder_name")
+        style_folder = style_config.get("folder_name")
         if not style_folder:
             # Fallback: sanitize the style name
-            style_folder = style_name.lower().replace(" ", "_")
+            style_folder = style.lower().replace(" ", "_")
         output_base = STYLE_SYNC_DEFAULT_TARGET.strip("/")
         target_folder = f"{output_base}/{style_folder}" if output_base else style_folder
     else:
@@ -222,8 +222,8 @@ def get_styled_file(
         style_folder = "original"
         target_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
     
-    # Handle random file selection when filename is "-1"
-    if filename == "-1":
+    # Handle random file selection when id is "-1"
+    if id == "-1":
         all_files = storage.list_files()
         # Filter to images in the target folder
         folder_images = []
@@ -244,8 +244,8 @@ def get_styled_file(
         actual_filename = Path(styled_file_path).name
     else:
         # Build the styled file path
-        styled_file_path = f"{target_folder}/{filename}" if target_folder else filename
-        actual_filename = filename
+        styled_file_path = f"{target_folder}/{id}" if target_folder else id
+        actual_filename = id
         
         # Check if the file exists in storage
         file_content = storage.get_file(styled_file_path)
@@ -253,10 +253,10 @@ def get_styled_file(
             raise HTTPException(status_code=404, detail=f"Styled file not found: {styled_file_path}")
     
     return {
-        "style_name": style_name if style else "original",
+        "style": style if style_config else "original",
         "style_folder": style_folder,
         "file_path": styled_file_path,
-        "filename": actual_filename,
+        "id": actual_filename,
         "icon_path": icon_path,
         "icon_name": icon_name
     }
@@ -264,27 +264,27 @@ def get_styled_file(
 
 @app.get("/images/next", tags=["Images"])
 def get_next_image(
-    style_name: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),
-    current_image: str = Query(..., description="The current image filename to exclude")
+    style: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),
+    id: str = Query(..., description="The current image filename to exclude")
 ):
     """
     Get a random next image for the given style, excluding the current image.
     If style is not found, returns a random original image.
     """
-    # Load styles to validate style_name and get folder_name
+    # Load styles to validate style and get folder_name
     styles = load_styles_from_file()
-    style = next((s for s in styles if s.get("name") == style_name), None)
+    style_config = next((s for s in styles if s.get("name") == style), None)
     
     # Get icon from style config (empty if style not found)
-    icon_name = style.get("icon", "") if style else ""
+    icon_name = style_config.get("icon", "") if style_config else ""
     icon_folder = STYLE_SYNC_ICON_FOLDER.strip("/")
     icon_path = f"{icon_folder}/{icon_name}" if icon_folder and icon_name else icon_name
     
     # Determine the target folder based on whether style exists
-    if style:
-        style_folder = style.get("folder_name")
+    if style_config:
+        style_folder = style_config.get("folder_name")
         if not style_folder:
-            style_folder = style_name.lower().replace(" ", "_")
+            style_folder = style.lower().replace(" ", "_")
         output_base = STYLE_SYNC_DEFAULT_TARGET.strip("/")
         target_folder = f"{output_base}/{style_folder}" if output_base else style_folder
     else:
@@ -303,7 +303,7 @@ def get_next_image(
             folder_images.append(file_path)
     
     # Exclude the current image
-    current_image_name = Path(current_image).name
+    current_image_name = Path(id).name
     available_images = [
         img for img in folder_images 
         if Path(img).name != current_image_name
@@ -320,10 +320,10 @@ def get_next_image(
     next_filename = Path(next_file_path).name
     
     return {
-        "style_name": style_name if style else "original",
+        "style": style if style_config else "original",
         "style_folder": style_folder,
         "file_path": next_file_path,
-        "filename": next_filename,
+        "id": next_filename,
         "icon_path": icon_path,
         "icon_name": icon_name,
         "excluded": current_image_name
