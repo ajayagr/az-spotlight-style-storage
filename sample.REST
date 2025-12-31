@@ -37,6 +37,48 @@ DELETE {{baseUrl}}/files/photos/sample.jpg
 X-API-Key: {{apiKey}}
 
 ### ===========================================
+### Image APIs
+### ===========================================
+
+### Get random images from source folder (default 4)
+GET {{baseUrl}}/images/random
+
+###
+
+### Get random images with custom count
+GET {{baseUrl}}/images/random?count=6
+
+###
+
+### Get styled image path (specific file)
+GET {{baseUrl}}/images/styled?style=Geometric3D&id=photo1.jpg
+
+###
+
+### Get styled image path (case-insensitive style name)
+GET {{baseUrl}}/images/styled?style=geometric3d&id=photo1.jpg
+
+###
+
+### Get random styled image for a style
+GET {{baseUrl}}/images/styled?style=Cyberpunk&id=-1
+
+###
+
+### Get styled image - fallback to original if style not found
+GET {{baseUrl}}/images/styled?style=NonExistentStyle&id=photo1.jpg
+
+###
+
+### Get next random image (excluding current)
+GET {{baseUrl}}/images/next?style=Anime&id=photo1.jpg
+
+###
+
+### Get next random image (case-insensitive)
+GET {{baseUrl}}/images/next?style=neonart&id=photo2.jpg
+
+### ===========================================
 ### StyleSync APIs
 ### ===========================================
 

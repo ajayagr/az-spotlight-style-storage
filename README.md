@@ -115,21 +115,23 @@ The API supports two authentication methods:
 
 ---
 
-### Endpoints
+## 🌐 Web UI
 
-#### 1. Home Page (Web UI)
+#### Home Page
 
 ```http
 GET /
 ```
 
-Returns the HTML file explorer interface.
+Returns the HTML file explorer interface with file management capabilities.
 
 **Response**: HTML page with file browser
 
 ---
 
-#### 2. List All Files
+## 📁 File Management APIs
+
+### 1. List All Files
 
 ```http
 GET /files
@@ -152,7 +154,7 @@ Retrieves a list of all files in storage.
 
 ---
 
-#### 3. Upload a File
+### 2. Upload a File
 
 ```http
 POST /files
@@ -186,7 +188,7 @@ curl -X POST "http://localhost:8000/files?folder=images" \
 
 ---
 
-#### 4. Get/Download a File
+### 3. Get/Download a File
 
 ```http
 GET /files/{filename}
@@ -218,7 +220,7 @@ curl "http://localhost:8000/files/documents/report.pdf" \
 
 ---
 
-#### 5. Delete a File
+### 4. Delete a File
 
 ```http
 DELETE /files/{filename}
@@ -249,7 +251,11 @@ curl -X DELETE "http://localhost:8000/files/images/photo.jpg" \
 
 ---
 
-#### 6. Get Random Images
+## 🖼️ Image APIs
+
+These endpoints provide image discovery and styled image lookup functionality.
+
+### 1. Get Random Images
 
 ```http
 GET /images/random
@@ -288,7 +294,7 @@ curl "http://localhost:8000/images/random?count=6"
 
 ---
 
-#### 7. Get Styled File Path
+### 2. Get Styled File Path
 
 ```http
 GET /images/styled
@@ -352,7 +358,7 @@ curl "http://localhost:8000/images/styled?style=geometric3d&id=-1"
 
 ---
 
-#### 8. Get Next Image
+### 3. Get Next Image
 
 ```http
 GET /images/next
@@ -400,7 +406,7 @@ curl "http://localhost:8000/images/next?style=Geometric3D&id=photo1.jpg"
 
 ---
 
-## ⚡ StyleSync API: AI Style Transfer
+## ⚡ StyleSync APIs
 
 The integrated StyleSync service provides AI-powered image style transfer capabilities directly within the FastAPI application.
 
@@ -408,7 +414,7 @@ The integrated StyleSync service provides AI-powered image style transfer capabi
 
 ---
 
-### 6. Run StyleSync (Synchronous)
+### 1. Run StyleSync (Synchronous)
 
 ```http
 POST /stylesync
@@ -474,7 +480,7 @@ styled-photos/
 
 ---
 
-### 7. Run StyleSync (Async/Background)
+### 2. Run StyleSync (Async/Background)
 
 ```http
 POST /stylesync/async
@@ -505,7 +511,7 @@ curl -X POST "http://localhost:8000/stylesync/async" \
 
 ---
 
-### 8. Get StyleSync Job Status
+### 3. Get StyleSync Job Status
 
 ```http
 GET /stylesync/status/{job_id}
@@ -540,7 +546,7 @@ curl "http://localhost:8000/stylesync/status/550e8400-e29b-41d4-a716-44665544000
 
 ---
 
-### 9. List Styleable Images
+### 4. List Styleable Images
 
 ```http
 GET /stylesync/images
@@ -575,7 +581,7 @@ curl "http://localhost:8000/stylesync/images?source_path=photos/"
 
 ---
 
-### 10. Get Configured Styles
+### 5. Get Configured Styles
 
 ```http
 GET /stylesync/styles
@@ -621,7 +627,7 @@ curl "http://localhost:8000/stylesync/styles"
 
 ---
 
-### 11. List AI Providers
+### 6. List AI Providers
 
 ```http
 GET /stylesync/providers
