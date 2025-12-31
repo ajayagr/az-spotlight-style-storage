@@ -36,6 +36,12 @@ Content-Type: image/jpeg
 DELETE {{baseUrl}}/files/photos/sample.jpg
 X-API-Key: {{apiKey}}
 
+###
+
+### Delete an entire folder (requires API key)
+DELETE {{baseUrl}}/folders/styled/geometric_3d
+X-API-Key: {{apiKey}}
+
 ### ===========================================
 ### Image APIs
 ### ===========================================

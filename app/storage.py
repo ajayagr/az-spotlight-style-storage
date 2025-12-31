@@ -76,3 +76,48 @@ class StorageService:
             file_path = self.local_storage_path / filename
             if file_path.exists():
                 file_path.unlink()
+
+    def delete_folder(self, folder_path: str) -> dict:
+        """
+        Delete all files within a folder.
+        Returns a dict with deleted files count and list.
+        """
+        deleted_files = []
+        
+        # Normalize folder path - ensure it ends with /
+        folder_prefix = folder_path.rstrip("/") + "/" if folder_path else ""
+        
+        if self.mode == "AZURE":
+            # List all blobs with the folder prefix
+            blobs_to_delete = [b.name for b in self.container_client.list_blobs(name_starts_with=folder_prefix)]
+            for blob_name in blobs_to_delete:
+                try:
+                    blob_client = self.container_client.get_blob_client(blob_name)
+                    blob_client.delete_blob()
+                    deleted_files.append(blob_name)
+                except Exception:
+                    pass  # Skip files that fail to delete
+        else:
+            folder_full_path = self.local_storage_path / folder_path
+            if folder_full_path.exists() and folder_full_path.is_dir():
+                # Get all files in the folder
+                for file_path in folder_full_path.rglob("*"):
+                    if file_path.is_file():
+                        rel_path = str(file_path.relative_to(self.local_storage_path)).replace("\\", "/")
+                        try:
+                            file_path.unlink()
+                            deleted_files.append(rel_path)
+                        except Exception:
+                            pass  # Skip files that fail to delete
+                # Remove empty directories
+                try:
+                    import shutil
+                    shutil.rmtree(folder_full_path)
+                except Exception:
+                    pass
+        
+        return {
+            "folder": folder_path,
+            "deleted_count": len(deleted_files),
+            "deleted_files": deleted_files
+        }

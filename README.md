@@ -251,6 +251,42 @@ curl -X DELETE "http://localhost:8000/files/images/photo.jpg" \
 
 ---
 
+### 5. Delete a Folder
+
+```http
+DELETE /folders/{folder_path}
+```
+
+Delete all files within a folder.
+
+**Authentication**: Required
+
+**Parameters**:
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `folder_path` | string | path | Path to the folder to delete |
+
+**Example**:
+```bash
+curl -X DELETE "http://localhost:8000/folders/styled/geometric_3d" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response**:
+```json
+{
+  "folder": "styled/geometric_3d",
+  "status": "deleted",
+  "deleted_count": 15,
+  "deleted_files": [
+    "styled/geometric_3d/photo1.jpg",
+    "styled/geometric_3d/photo2.jpg"
+  ]
+}
+```
+
+---
+
 ## 🖼️ Image APIs
 
 These endpoints provide image discovery and styled image lookup functionality.

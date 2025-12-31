@@ -1,0 +1,22 @@
+meta {
+  name: Delete Folder
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{host}}/folders/styled/geometric_3d
+  body: none
+  auth: none
+}
+
+headers {
+  X-API-Key: {{api_key}}
+}
+
+docs {
+  Delete all files within a folder. Requires API key authentication.
+  Returns the count and list of deleted files.
+  
+  Replace "styled/geometric_3d" with the folder path you want to delete.
+}

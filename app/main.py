@@ -365,6 +365,26 @@ def delete_file(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/folders/{folder_path:path}")
+def delete_folder(
+    folder_path: str,
+    auth: str = Depends(get_api_key)
+):
+    """
+    Delete all files within a folder. Requires API Key.
+    """
+    try:
+        result = storage.delete_folder(folder_path)
+        return {
+            "folder": folder_path,
+            "status": "deleted",
+            "deleted_count": result["deleted_count"],
+            "deleted_files": result["deleted_files"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # =============================================================================
 # StyleSync API Endpoints
 # =============================================================================
