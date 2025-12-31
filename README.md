@@ -249,6 +249,155 @@ curl -X DELETE "http://localhost:8000/files/images/photo.jpg" \
 
 ---
 
+#### 6. Get Random Images
+
+```http
+GET /images/random
+```
+
+Get randomly selected images from the `STYLE_SYNC_DEFAULT_SOURCE_FOLDER`.
+
+**Authentication**: Not required
+
+**Parameters**:
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `count` | integer | query | Number of random images to return (1-20, default: 4) |
+
+**Example**:
+```bash
+curl "http://localhost:8000/images/random?count=6"
+```
+
+**Response**:
+```json
+{
+  "source_folder": "originals",
+  "total_images": 15,
+  "count": 6,
+  "images": [
+    "originals/photo1.jpg",
+    "originals/photo5.png",
+    "originals/photo12.jpeg",
+    "originals/photo8.webp",
+    "originals/photo3.jpg",
+    "originals/photo9.png"
+  ]
+}
+```
+
+---
+
+#### 7. Get Styled File Path
+
+```http
+GET /images/styled
+```
+
+Get the path for a styled file if it exists, along with the icon path.
+
+**Authentication**: Not required
+
+**Parameters**:
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `style_name` | string | query | The style name (e.g., "Geometric 3D") (required) |
+| `filename` | string | query | The filename to look up. Use `-1` to get a random image. (required) |
+
+**Behavior**:
+- If `filename` is `-1`: Returns a random image from the style folder
+- If `style_name` is not found: Returns the original image from the source folder instead
+
+**Example - Specific file**:
+```bash
+curl "http://localhost:8000/images/styled?style_name=Geometric%203D&filename=photo1.jpg"
+```
+
+**Example - Random image**:
+```bash
+curl "http://localhost:8000/images/styled?style_name=Geometric%203D&filename=-1"
+```
+
+**Response** (200):
+```json
+{
+  "style_name": "Geometric 3D",
+  "style_folder": "geometric_3d",
+  "file_path": "styled/geometric_3d/photo1.jpg",
+  "filename": "photo1.jpg",
+  "icon_path": "icons/shapes",
+  "icon_name": "shapes"
+}
+```
+
+**Response when style not found** (200 - returns original):
+```json
+{
+  "style_name": "original",
+  "style_folder": "original",
+  "file_path": "originals/photo1.jpg",
+  "filename": "photo1.jpg",
+  "icon_path": "",
+  "icon_name": ""
+}
+```
+
+**Error Response** (404):
+```json
+{
+  "detail": "Styled file not found: styled/geometric_3d/photo1.jpg"
+}
+```
+
+---
+
+#### 8. Get Next Image
+
+```http
+GET /images/next
+```
+
+Get a random image for the given style, excluding the current image. Useful for "next" or "shuffle" functionality.
+
+**Authentication**: Not required
+
+**Parameters**:
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `style_name` | string | query | The style name (e.g., "Geometric 3D") (required) |
+| `current_image` | string | query | The current image filename to exclude (required) |
+
+**Behavior**:
+- Returns a random image from the style folder, excluding the current image
+- If `style_name` is not found: Returns a random original image instead
+
+**Example**:
+```bash
+curl "http://localhost:8000/images/next?style_name=Geometric%203D&current_image=photo1.jpg"
+```
+
+**Response** (200):
+```json
+{
+  "style_name": "Geometric 3D",
+  "style_folder": "geometric_3d",
+  "file_path": "styled/geometric_3d/photo5.jpg",
+  "filename": "photo5.jpg",
+  "icon_path": "icons/shapes",
+  "icon_name": "shapes",
+  "excluded": "photo1.jpg"
+}
+```
+
+**Error Response** (404):
+```json
+{
+  "detail": "No other images found in folder: styled/geometric_3d"
+}
+```
+
+---
+
 ## ⚡ StyleSync API: AI Style Transfer
 
 The integrated StyleSync service provides AI-powered image style transfer capabilities directly within the FastAPI application.
@@ -518,6 +667,7 @@ curl "http://localhost:8000/stylesync/providers"
 | `API_KEY` | No | `default-insecure-key` | API key for protected endpoints |
 | `STYLE_SYNC_DEFAULT_SOURCE_FOLDER` | No | `""` | Default source path for StyleSync when not specified in request |
 | `STYLE_SYNC_DEFAULT_TARGET_FOLDER` | No | `styled/` | Default output path for StyleSync when not specified in request |
+| `STYLE_SYNC_ICON_FOLDER` | No | `icons/` | Folder where style icons are stored |
 
 ### Azure OpenAI Provider Configuration
 

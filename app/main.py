@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from typing import List, Optional
+import random
 from .storage import StorageService
 from .stylesync import StyleSyncService
 import mimetypes
@@ -20,8 +21,9 @@ logger = logging.getLogger(__name__)
 STYLES_FILE_PATH = Path(__file__).parent.parent / "styles.json"
 
 # StyleSync default folder configuration
-STYLE_SYNC_DEFAULT_SOURCE = os.getenv("STYLE_SYNC_DEFAULT_SOURCE_FOLDER", "")
+STYLE_SYNC_DEFAULT_SOURCE = os.getenv("STYLE_SYNC_DEFAULT_SOURCE_FOLDER", "source/")
 STYLE_SYNC_DEFAULT_TARGET = os.getenv("STYLE_SYNC_DEFAULT_TARGET_FOLDER", "styled/")
+STYLE_SYNC_ICON_FOLDER = os.getenv("STYLE_SYNC_ICON_FOLDER", "icons/")
 
 
 def load_styles_from_file() -> List[dict]:
@@ -146,6 +148,187 @@ def list_files():
     List all available files. Public Access.
     """
     return {"files": storage.list_files()}
+
+
+# Valid image extensions for random selection
+VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
+
+
+@app.get("/images/random", tags=["Images"])
+def get_random_images(count: int = Query(default=4, ge=1, le=20, description="Number of random images to return")):
+    """
+    Get random images from the STYLE_SYNC_SOURCE_FOLDER.
+    Returns up to 'count' randomly selected image file paths.
+    """
+    source_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
+    all_files = storage.list_files()
+    
+    # Filter to only images in the source folder
+    images = []
+    for file_path in all_files:
+        # Check if file is in the source folder (or root if source is empty)
+        if source_folder:
+            if not file_path.startswith(source_folder + "/") and not file_path.startswith(source_folder):
+                continue
+        
+        # Check if it's a valid image extension
+        ext = Path(file_path).suffix.lower()
+        if ext in VALID_IMAGE_EXTENSIONS:
+            images.append(file_path)
+    
+    # Randomly select up to 'count' images
+    selected_count = min(count, len(images))
+    random_images = random.sample(images, selected_count) if images else []
+    
+    return {
+        "source_folder": source_folder or "(root)",
+        "total_images": len(images),
+        "count": len(random_images),
+        "images": random_images
+    }
+
+
+@app.get("/images/styled", tags=["Images"])
+def get_styled_file(
+    style_name: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),
+    filename: str = Query(..., description="The filename to look up. Use '-1' to get a random image.")
+):
+    """
+    Get a styled file path and icon path by style name and filename.
+    If filename is '-1', returns a random image from the style folder.
+    If style is not found, returns the original image.
+    Returns 404 if no matching file exists.
+    """
+    # Load styles to validate style_name and get folder_name
+    styles = load_styles_from_file()
+    style = next((s for s in styles if s.get("name") == style_name), None)
+    
+    # Get icon from style config (empty if style not found)
+    icon_name = style.get("icon", "") if style else ""
+    icon_folder = STYLE_SYNC_ICON_FOLDER.strip("/")
+    icon_path = f"{icon_folder}/{icon_name}" if icon_folder and icon_name else icon_name
+    
+    # Determine the target folder based on whether style exists
+    if style:
+        # Get the folder_name from the style config
+        style_folder = style.get("folder_name")
+        if not style_folder:
+            # Fallback: sanitize the style name
+            style_folder = style_name.lower().replace(" ", "_")
+        output_base = STYLE_SYNC_DEFAULT_TARGET.strip("/")
+        target_folder = f"{output_base}/{style_folder}" if output_base else style_folder
+    else:
+        # Style not found - use original/source folder
+        style_folder = "original"
+        target_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
+    
+    # Handle random file selection when filename is "-1"
+    if filename == "-1":
+        all_files = storage.list_files()
+        # Filter to images in the target folder
+        folder_images = []
+        for file_path in all_files:
+            if target_folder:
+                if not file_path.startswith(target_folder + "/") and not file_path.startswith(target_folder):
+                    continue
+            ext = Path(file_path).suffix.lower()
+            if ext in VALID_IMAGE_EXTENSIONS:
+                folder_images.append(file_path)
+        
+        if not folder_images:
+            raise HTTPException(status_code=404, detail=f"No images found in folder: {target_folder or '(root)'}")
+        
+        # Select a random image
+        styled_file_path = random.choice(folder_images)
+        # Extract just the filename from the path
+        actual_filename = Path(styled_file_path).name
+    else:
+        # Build the styled file path
+        styled_file_path = f"{target_folder}/{filename}" if target_folder else filename
+        actual_filename = filename
+        
+        # Check if the file exists in storage
+        file_content = storage.get_file(styled_file_path)
+        if file_content is None:
+            raise HTTPException(status_code=404, detail=f"Styled file not found: {styled_file_path}")
+    
+    return {
+        "style_name": style_name if style else "original",
+        "style_folder": style_folder,
+        "file_path": styled_file_path,
+        "filename": actual_filename,
+        "icon_path": icon_path,
+        "icon_name": icon_name
+    }
+
+
+@app.get("/images/next", tags=["Images"])
+def get_next_image(
+    style_name: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),
+    current_image: str = Query(..., description="The current image filename to exclude")
+):
+    """
+    Get a random next image for the given style, excluding the current image.
+    If style is not found, returns a random original image.
+    """
+    # Load styles to validate style_name and get folder_name
+    styles = load_styles_from_file()
+    style = next((s for s in styles if s.get("name") == style_name), None)
+    
+    # Get icon from style config (empty if style not found)
+    icon_name = style.get("icon", "") if style else ""
+    icon_folder = STYLE_SYNC_ICON_FOLDER.strip("/")
+    icon_path = f"{icon_folder}/{icon_name}" if icon_folder and icon_name else icon_name
+    
+    # Determine the target folder based on whether style exists
+    if style:
+        style_folder = style.get("folder_name")
+        if not style_folder:
+            style_folder = style_name.lower().replace(" ", "_")
+        output_base = STYLE_SYNC_DEFAULT_TARGET.strip("/")
+        target_folder = f"{output_base}/{style_folder}" if output_base else style_folder
+    else:
+        style_folder = "original"
+        target_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
+    
+    # Get all images in the target folder
+    all_files = storage.list_files()
+    folder_images = []
+    for file_path in all_files:
+        if target_folder:
+            if not file_path.startswith(target_folder + "/") and not file_path.startswith(target_folder):
+                continue
+        ext = Path(file_path).suffix.lower()
+        if ext in VALID_IMAGE_EXTENSIONS:
+            folder_images.append(file_path)
+    
+    # Exclude the current image
+    current_image_name = Path(current_image).name
+    available_images = [
+        img for img in folder_images 
+        if Path(img).name != current_image_name
+    ]
+    
+    if not available_images:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No other images found in folder: {target_folder or '(root)'}"
+        )
+    
+    # Select a random image from available ones
+    next_file_path = random.choice(available_images)
+    next_filename = Path(next_file_path).name
+    
+    return {
+        "style_name": style_name if style else "original",
+        "style_folder": style_folder,
+        "file_path": next_file_path,
+        "filename": next_filename,
+        "icon_path": icon_path,
+        "icon_name": icon_name,
+        "excluded": current_image_name
+    }
+
 
 @app.delete("/files/{filename:path}")
 def delete_file(
