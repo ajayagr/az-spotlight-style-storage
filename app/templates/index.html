@@ -317,6 +317,27 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 
+        /* StyleSync Progress Banner */
+        .stylesync-banner {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+            color: white; padding: 12px 20px;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            z-index: 1003; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(0); } to { transform: translateY(-100%); } }
+        .stylesync-banner i { font-size: 18px; }
+        .stylesync-banner .spinner { animation: spin 1s linear infinite; }
+        .stylesync-banner .banner-text { font-size: 14px; font-weight: 500; }
+        .stylesync-banner .banner-status { font-size: 12px; opacity: 0.9; margin-left: 8px; }
+        .stylesync-banner .pulse-dot {
+            width: 8px; height: 8px; background: #4cff4c;
+            border-radius: 50%; animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+
         /* Styles Modal */
         .styles-modal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -384,6 +405,14 @@
         <button class="view-styles-btn" onclick="showStylesModal()">
             <i class="fas fa-palette"></i> View Styles
         </button>
+    </div>
+
+    <!-- StyleSync Progress Banner -->
+    <div id="styleSyncBanner" class="stylesync-banner hidden">
+        <i class="fas fa-magic spinner"></i>
+        <span class="banner-text">StyleSync Processing</span>
+        <span id="bannerStatus" class="banner-status">Starting...</span>
+        <div class="pulse-dot"></div>
     </div>
 
     <!-- Toast Container -->
@@ -759,11 +788,6 @@
         // Only trigger StyleSync for uploads to source folder (empty folder or 'source' prefix)
         const isSourceFolder = !folder || folder === '' || folder.toLowerCase().startsWith('source');
         if (runStyleSync && uploaded > 0 && isSourceFolder) {
-            uploadTitle.textContent = 'Running StyleSync...';
-            uploadStatus.textContent = 'Applying AI style transformations...';
-            statusIcon.className = 'fas fa-magic status-icon loading';
-            updateProgress(100, 'StyleSync in progress...');
-
             try {
                 const sourcePath = folder || '';
                 const response = await fetch('/stylesync/async', {
@@ -774,9 +798,11 @@
 
                 if (response.ok) {
                     const result = await response.json();
-                    showSuccess('Upload Complete!', `${uploaded} file(s) uploaded. StyleSync job started.`);
-                    uploadDetails.textContent = 'StyleSync is processing in the background. A notification will appear when complete.';
-                    // Start polling for results
+                    // Close modal and show banner - let user continue working
+                    uploadOverlay.classList.add('hidden');
+                    showToast('Upload Complete', `${uploaded} file(s) uploaded. StyleSync started.`, 'success');
+                    refreshFileList();
+                    // Start polling with visible banner
                     pollStyleSyncStatus(result.job_id);
                 } else {
                     showSuccess('Upload Complete!', `${uploaded} file(s) uploaded. StyleSync failed to start.`);
@@ -831,12 +857,8 @@
                 updateProgress(100, 'File deleted');
                 
                 // Run StyleSync only if enabled, file was an image, and file was from source folder
+                // Run StyleSync only if enabled, file was an image, and file was from source folder
                 if (runStyleSync && isImage && isSourceFolder) {
-                    uploadTitle.textContent = 'Running StyleSync...';
-                    uploadStatus.textContent = 'Updating styled images...';
-                    statusIcon.className = 'fas fa-magic status-icon loading';
-                    uploadDetails.textContent = 'Syncing to remove orphaned styled versions...';
-                    
                     try {
                         const syncResponse = await fetch('/stylesync/async', {
                             method: 'POST',
@@ -846,9 +868,11 @@
                         
                         if (syncResponse.ok) {
                             const result = await syncResponse.json();
-                            showSuccess('Delete Complete!', 'File deleted. StyleSync job started.');
-                            uploadDetails.textContent = 'StyleSync is running in the background. A notification will appear when complete.';
-                            // Start polling for results
+                            // Close modal and show banner - let user continue working
+                            uploadOverlay.classList.add('hidden');
+                            showToast('Delete Complete', 'File deleted. StyleSync started.', 'success');
+                            refreshFileList();
+                            // Start polling with visible banner
                             pollStyleSyncStatus(result.job_id);
                         } else {
                             showSuccess('Delete Complete!', 'File deleted. StyleSync failed to start.');
@@ -914,7 +938,7 @@
                 
                 // Run StyleSync if needed
                 if (runStyleSync && isSourceFolder) {
-                    await runStyleSyncAfterDelete(key);
+                    await runStyleSyncAfterDelete(key, folderDisplay);
                 } else {
                     showSuccess('Folder Deleted!', `${deleted} file(s) deleted from ${folderDisplay}.`);
                     uploadDetails.textContent = '';
@@ -931,7 +955,7 @@
                     
                     // Run StyleSync if needed
                     if (runStyleSync && isSourceFolder) {
-                        await runStyleSyncAfterDelete(key);
+                        await runStyleSyncAfterDelete(key, folderDisplay);
                     } else {
                         showSuccess('Folder Deleted!', `${result.deleted_count} file(s) deleted from ${folderDisplay}.`);
                         uploadDetails.textContent = '';
@@ -947,12 +971,7 @@
         }
     }
 
-    async function runStyleSyncAfterDelete(key) {
-        uploadTitle.textContent = 'Running StyleSync...';
-        uploadStatus.textContent = 'Updating styled images...';
-        statusIcon.className = 'fas fa-magic status-icon loading';
-        uploadDetails.textContent = 'Syncing to remove orphaned styled versions...';
-        
+    async function runStyleSyncAfterDelete(key, folderDisplay) {
         try {
             const syncResponse = await fetch('/stylesync/async', {
                 method: 'POST',
@@ -962,8 +981,11 @@
             
             if (syncResponse.ok) {
                 const result = await syncResponse.json();
-                showSuccess('Delete Complete!', 'Folder deleted. StyleSync job started.');
-                uploadDetails.textContent = 'StyleSync is running in the background. A notification will appear when complete.';
+                // Close modal and show banner - let user continue working
+                uploadOverlay.classList.add('hidden');
+                showToast('Folder Deleted', `${folderDisplay} deleted. StyleSync started.`, 'success');
+                refreshFileList();
+                // Start polling with visible banner
                 pollStyleSyncStatus(result.job_id);
             } else {
                 showSuccess('Delete Complete!', 'Folder deleted. StyleSync failed to start.');
@@ -1007,18 +1029,54 @@
         return toast;
     }
 
+    // StyleSync Banner elements
+    const styleSyncBanner = document.getElementById('styleSyncBanner');
+    const bannerStatus = document.getElementById('bannerStatus');
+
+    function showStyleSyncBanner(status = 'Starting...') {
+        styleSyncBanner.classList.remove('hidden');
+        bannerStatus.textContent = status;
+    }
+
+    function updateStyleSyncBanner(status) {
+        bannerStatus.textContent = status;
+    }
+
+    function hideStyleSyncBanner() {
+        styleSyncBanner.style.animation = 'slideUp 0.3s ease-out forwards';
+        setTimeout(() => {
+            styleSyncBanner.classList.add('hidden');
+            styleSyncBanner.style.animation = '';
+        }, 300);
+    }
+
     // Poll StyleSync job status and show toast with results
-    async function pollStyleSyncStatus(jobId, maxAttempts = 30) {
+    async function pollStyleSyncStatus(jobId, maxAttempts = 60) {
         let attempts = 0;
+        
+        // Show banner immediately
+        showStyleSyncBanner('Initializing...');
         
         const poll = async () => {
             try {
+                attempts++;
+                updateStyleSyncBanner(`Checking status... (${attempts * 10}s)`);
+                
                 const response = await fetch(`/stylesync/status/${jobId}`);
                 if (response.ok) {
                     const result = await response.json();
                     
+                    // Update banner with current progress
+                    const processedCount = result.processed?.length || 0;
+                    const totalExpected = processedCount + (result.failed?.length || 0) + (result.skipped?.length || 0);
+                    
+                    if (result.status === 'running') {
+                        updateStyleSyncBanner(`Processing... ${processedCount} images styled`);
+                    }
+                    
                     if (result.status === 'completed' || result.status === 'failed') {
-                        const processedCount = result.processed?.length || 0;
+                        hideStyleSyncBanner();
+                        
                         const failedCount = result.failed?.length || 0;
                         const skippedCount = result.skipped?.length || 0;
                         
@@ -1028,6 +1086,8 @@
                                 `✓ ${processedCount} processed, ${skippedCount} skipped${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
                                 'success'
                             );
+                            // Refresh file list to show new styled images
+                            refreshFileList();
                         } else {
                             showToast(
                                 'StyleSync Failed',
@@ -1039,18 +1099,26 @@
                     }
                     
                     // Still running, continue polling
-                    attempts++;
                     if (attempts < maxAttempts) {
                         setTimeout(poll, 10000);
+                    } else {
+                        hideStyleSyncBanner();
+                        showToast('StyleSync Timeout', 'Job is taking longer than expected. Check back later.', 'info');
                     }
+                } else {
+                    // API error
+                    hideStyleSyncBanner();
+                    showToast('StyleSync Error', 'Failed to check job status', 'error');
                 }
             } catch (error) {
                 console.error('Error polling StyleSync status:', error);
+                hideStyleSyncBanner();
+                showToast('StyleSync Error', 'Connection error while checking status', 'error');
             }
         };
         
-        // Start polling after a brief delay
-        setTimeout(poll, 10000);
+        // Start polling after a brief delay (give server time to start processing)
+        setTimeout(poll, 3000);
     }
 
     // Styles Modal functions

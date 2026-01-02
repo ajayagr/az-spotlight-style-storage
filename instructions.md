@@ -108,14 +108,16 @@ az-spotlight-style-storage/
   - Grid/folder view toggle
   - Multi-file upload with progress overlay
   - Auto StyleSync toggle on upload/delete
-  - Toast notifications for StyleSync results
+  - Toast notifications for StyleSync results (10 second display)
+  - **StyleSync progress banner** - persistent top banner showing job status
   - View configured styles modal
   - Incremental file list refresh (no page reload)
 - **Key JavaScript Functions**:
   - `uploadFiles()`: Handles multi-file upload
   - `deleteFile()`: Deletes file with optional StyleSync trigger
   - `refreshFileList()`: Updates UI without page reload
-  - `pollStyleSyncStatus()`: Polls background jobs, shows toast on completion
+  - `pollStyleSyncStatus()`: Polls background jobs with visible progress banner
+  - `showStyleSyncBanner()` / `hideStyleSyncBanner()`: Manage progress banner visibility
   - `showToast()`: Displays notification messages
 
 ### `styles.json`
