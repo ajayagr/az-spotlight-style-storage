@@ -411,6 +411,7 @@ class StyleSyncResponse(BaseModel):
     processed: List[str]
     failed: List[str]
     skipped: List[str]
+    deleted: List[str] = []  # Orphaned files that were deleted
     error: Optional[str] = None
 
 
@@ -457,6 +458,7 @@ def run_stylesync(
             processed=result.processed,
             failed=result.failed,
             skipped=result.skipped,
+            deleted=result.deleted,
             error=result.error
         )
         
@@ -505,6 +507,7 @@ async def run_stylesync_async(
         "processed": [],
         "failed": [],
         "skipped": [],
+        "deleted": [],
         "error": None
     }
     
@@ -523,6 +526,7 @@ async def run_stylesync_async(
                 "processed": result.processed,
                 "failed": result.failed,
                 "skipped": result.skipped,
+                "deleted": result.deleted,
                 "error": result.error
             }
         except Exception as e:
@@ -556,6 +560,7 @@ def get_stylesync_status(job_id: str):
         processed=job["processed"],
         failed=job["failed"],
         skipped=job["skipped"],
+        deleted=job.get("deleted", []),
         error=job["error"]
     )
 

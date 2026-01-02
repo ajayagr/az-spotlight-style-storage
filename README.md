@@ -500,7 +500,8 @@ curl -X POST "http://localhost:8000/stylesync" \
   "output": "styled-photos/",
   "processed": ["watercolor/photo1.jpg", "oil_painting/photo1.jpg"],
   "failed": [],
-  "skipped": ["watercolor/photo2.jpg"]
+  "skipped": ["watercolor/photo2.jpg"],
+  "deleted": []
 }
 ```
 
@@ -518,6 +519,8 @@ styled-photos/
     ├── photo1.jpg
     └── photo2.jpg
 ```
+
+**Orphan Cleanup**: When a source image is deleted, running StyleSync will automatically remove the corresponding styled images and return them in the `deleted` array.
 
 ---
 

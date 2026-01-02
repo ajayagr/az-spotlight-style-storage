@@ -58,6 +58,7 @@ class SyncResult:
     processed: List[str] = field(default_factory=list)
     failed: List[str] = field(default_factory=list)
     skipped: List[str] = field(default_factory=list)
+    deleted: List[str] = field(default_factory=list)  # Orphaned files that were deleted
     error: Optional[str] = None
 
 
@@ -160,6 +161,57 @@ class StyleSyncService:
                 
         return missing_tasks
     
+    def get_orphaned_files(self, expected_state: Dict[str, SyncTask], output_path: str, style_folders: List[str]) -> List[str]:
+        """
+        Identify styled files that no longer have a source image (orphaned).
+        
+        Args:
+            expected_state: Map of expected output files based on current source images
+            output_path: Output directory path
+            style_folders: List of style folder names to check
+            
+        Returns:
+            List of file paths that should be deleted
+        """
+        orphaned_files = []
+        existing_files = self.storage.list_files()
+        output_prefix = output_path.strip('/')
+        
+        # Build set of expected file paths
+        expected_paths = set()
+        for state_key, task in expected_state.items():
+            target_path = f"{output_prefix}/{task.style_folder}/{task.output_filename}"
+            expected_paths.add(target_path)
+            # Also add the original folder copy
+            original_path = f"{output_prefix}/original/{task.output_filename}"
+            expected_paths.add(original_path)
+        
+        # Check all style folders (including 'original') for orphaned files
+        all_style_folders = style_folders + ['original']
+        
+        for file_path in existing_files:
+            # Check if file is in the output directory
+            if not file_path.startswith(output_prefix + '/'):
+                continue
+            
+            # Extract the style folder from the path
+            relative_path = file_path[len(output_prefix) + 1:]
+            parts = relative_path.split('/', 1)
+            if len(parts) < 2:
+                continue
+            
+            folder_name = parts[0]
+            
+            # Only check files in known style folders
+            if folder_name not in all_style_folders:
+                continue
+            
+            # Check if this file is in the expected state
+            if file_path not in expected_paths:
+                orphaned_files.append(file_path)
+                
+        return orphaned_files
+    
     def process_sync(
         self,
         source_path: str,
@@ -208,12 +260,29 @@ class StyleSyncService:
             return result
         
         try:
+            # Get style folder names for cleanup
+            style_folders = [sanitize_folder_name(s.name) for s in style_configs]
+            
             # Map expected state
             expected_state = self.map_expected_state(source_path, style_configs)
             
+            # Clean up orphaned files first (styled images without source)
+            orphaned_files = self.get_orphaned_files(expected_state, output_path, style_folders)
+            for orphan_path in orphaned_files:
+                try:
+                    self.storage.delete_file(orphan_path)
+                    result.deleted.append(orphan_path)
+                    logger.info(f"Deleted orphaned file: {orphan_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete orphaned file {orphan_path}: {e}")
+            
+            if orphaned_files:
+                logger.info(f"Cleaned up {len(result.deleted)} orphaned files")
+            
             if not expected_state:
                 result.status = "completed"
-                result.error = "No valid images found in source path"
+                if not orphaned_files:
+                    result.error = "No valid images found in source path"
                 return result
             
             # Get missing files

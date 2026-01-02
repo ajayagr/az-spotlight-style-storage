@@ -1079,13 +1079,14 @@
                         
                         const failedCount = result.failed?.length || 0;
                         const skippedCount = result.skipped?.length || 0;
+                        const deletedCount = result.deleted?.length || 0;
                         
                         if (result.status === 'completed') {
-                            showToast(
-                                'StyleSync Complete',
-                                `✓ ${processedCount} processed, ${skippedCount} skipped${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
-                                'success'
-                            );
+                            let message = `✓ ${processedCount} processed, ${skippedCount} skipped`;
+                            if (deletedCount > 0) message += `, ${deletedCount} cleaned up`;
+                            if (failedCount > 0) message += `, ${failedCount} failed`;
+                            
+                            showToast('StyleSync Complete', message, 'success');
                             // Refresh file list to show new styled images
                             refreshFileList();
                         } else {

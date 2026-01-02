@@ -86,13 +86,14 @@ az-spotlight-style-storage/
 - **Key Classes**:
   - `StyleConfig`: Style definition (name, prompt, strength)
   - `SyncTask`: Individual image-style transformation task
-  - `SyncResult`: Operation result with processed/failed/skipped lists
+  - `SyncResult`: Operation result with processed/failed/skipped/deleted lists
   - `StyleSyncService`: Main service class
 - **Key Methods**:
   - `get_valid_images()`: Lists images matching extensions (.jpg, .jpeg, .png, .webp)
   - `map_expected_state()`: Builds expected output file map
   - `get_missing_files()`: Identifies which files need generation
-  - `process_sync()`: Executes full sync operation
+  - `get_orphaned_files()`: Identifies styled files without source (for cleanup)
+  - `process_sync()`: Executes full sync operation (creates new + deletes orphaned)
 
 ### `app/stylesync/clients/azure.py`
 - **Purpose**: Azure OpenAI image generation
@@ -259,18 +260,20 @@ StyleSync creates this folder structure:
 
 3. **Toast Preservation**: UI uses `refreshFileList()` instead of `location.reload()` to preserve toast notifications.
 
-4. **Polling Interval**: StyleSync status polling uses 10-second intervals.
+4. **Polling Interval**: StyleSync status polling uses 10-second intervals (first poll after 3 seconds).
 
 5. **Style Matching**: Style names are matched case-insensitively with spaces, underscores, and hyphens normalized.
 
 6. **Image Extensions**: Valid extensions are `.jpg`, `.jpeg`, `.png`, `.webp` (defined in `sync.py`).
 
-7. **Authentication**: 
+7. **Orphan Cleanup**: StyleSync automatically deletes styled images when their source image is deleted. The `deleted` field in `SyncResult` tracks removed files.
+
+8. **Authentication**: 
    - Images are public (no auth needed)
    - Uploads, deletes, and StyleSync require API key
    - API key via header `X-API-Key` or query param `api_key`
 
-8. **Documentation Updates**: When making changes, update the appropriate documentation:
+9. **Documentation Updates**: When making changes, update the appropriate documentation:
    - **`instructions.md`** (this file): Update for architectural changes, new patterns, API changes, key function updates, or anything LLMs need to understand the codebase
    - **`README.md`**: Update for user-facing changes like new features, API documentation, environment variables, or usage instructions
    - **`sample.REST`**: Update when adding or modifying API endpoints
