@@ -19,6 +19,10 @@ A comprehensive Azure-based file storage and AI image style transfer application
 
 ```
 az-spotlight-style-storage/
+├── .github/
+│   └── workflows/                    # CI/CD Pipelines
+│       ├── azure-devops.yml          # Auto-deploy on push
+│       └── manual-deploy.yml         # Manual deployment trigger
 ├── app/                              # FastAPI Web Application
 │   ├── main.py                       # FastAPI routes and API endpoints
 │   ├── storage.py                    # Storage service (Azure/Local)
@@ -33,7 +37,8 @@ az-spotlight-style-storage/
 │           └── azure.py              # Azure OpenAI generator
 ├── Dockerfile                        # Container configuration
 ├── requirements.txt                  # Python dependencies
-└── sample.REST                       # Sample API requests
+├── sample.REST                       # Sample API requests
+└── styles.json                       # Style transformation configurations
 ```
 
 ---
