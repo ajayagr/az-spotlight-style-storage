@@ -40,8 +40,13 @@ az-spotlight-style-storage/
 ├── app/                         # FastAPI Application
 │   ├── main.py                  # Routes, endpoints, app configuration
 │   ├── storage.py               # StorageService (Azure/Local modes)
+│   ├── static/                  # Static assets
+│   │   ├── css/
+│   │   │   └── styles.css       # All application styles
+│   │   └── js/
+│   │       └── app.js           # Main JavaScript (native ES6+)
 │   ├── templates/
-│   │   └── index.html           # Web UI (file explorer, upload, StyleSync)
+│   │   └── index.html           # Web UI template (minimal, references static files)
 │   └── stylesync/               # AI Style Transfer Module
 │       ├── __init__.py          # Module exports
 │       ├── sync.py              # StyleSyncService, SyncTask, SyncResult
@@ -103,23 +108,35 @@ az-spotlight-style-storage/
   - `AZURE_OPENAI_MODEL`: Model name (default: `flux.1-kontext-pro`)
 - **Method**: `process_image_bytes()`: Sends image + prompt to Azure, returns styled image
 
-### `app/templates/index.html`
-- **Purpose**: Web-based file explorer UI
+### `app/static/css/styles.css`
+- **Purpose**: All application CSS styles (extracted from index.html)
 - **Features**:
-  - Grid/folder view toggle
-  - Multi-file upload with progress overlay
-  - Auto StyleSync toggle on upload/delete
-  - Toast notifications for StyleSync results (10 second display)
-  - **StyleSync progress banner** - persistent top banner showing job status
-  - View configured styles modal
-  - Incremental file list refresh (no page reload)
-- **Key JavaScript Functions**:
-  - `uploadFiles()`: Handles multi-file upload
-  - `deleteFile()`: Deletes file with optional StyleSync trigger
-  - `refreshFileList()`: Updates UI without page reload
+  - CSS custom properties for theming
+  - GPU-accelerated animations with `will-change` hints
+  - Performance optimizations (no `backdrop-filter`)
+  - Responsive grid layout for file cards
+- **Key Animations**: `spin`, `slideIn`, `slideOut`, `slideDown`, `slideUp`, `pulse`
+
+### `app/static/js/app.js`
+- **Purpose**: Main application JavaScript (native ES6+)
+- **Architecture**: Uses cached DOM element references, event delegation, DocumentFragment for batch updates
+- **Key Functions**:
+  - `buildFolderView()`: Constructs folder-grouped view from file cards
+  - `createFileCard()`: Creates file card element with event listeners
+  - `uploadFiles()`: Handles multi-file upload with progress
+  - `deleteFile()` / `deleteFolder()`: Delete operations with optional StyleSync
+  - `refreshFileList()`: Updates UI via API without page reload
   - `pollStyleSyncStatus()`: Polls background jobs with visible progress banner
-  - `showStyleSyncBanner()` / `hideStyleSyncBanner()`: Manage progress banner visibility
-  - `showToast()`: Displays notification messages
+  - `showToast()`: Displays notification messages with auto-dismiss
+- **Native JS Features Used**: `Map`, `Set`, arrow functions, template literals, `async/await`, optional chaining (`?.`), nullish coalescing (`??`), `Array.at()`, spread operator, destructuring
+
+### `app/templates/index.html`
+- **Purpose**: Minimal HTML template - structure only
+- **Features**:
+  - References external CSS (`/static/css/styles.css`)
+  - References external JS (`/static/js/app.js`)
+  - Jinja2 templating for server-rendered file list
+  - Inline script for attaching initial event listeners
 
 ### `styles.json`
 - **Purpose**: Style configuration file

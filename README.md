@@ -26,8 +26,13 @@ az-spotlight-style-storage/
 ├── app/                              # FastAPI Web Application
 │   ├── main.py                       # FastAPI routes and API endpoints
 │   ├── storage.py                    # Storage service (Azure/Local)
+│   ├── static/                       # Static assets
+│   │   ├── css/
+│   │   │   └── styles.css            # All application styles
+│   │   └── js/
+│   │       └── app.js                # Main JavaScript (native ES6+)
 │   ├── templates/
-│   │   └── index.html                # File explorer web UI
+│   │   └── index.html                # File explorer web UI template
 │   └── stylesync/                    # Integrated StyleSync module
 │       ├── __init__.py               # Module exports
 │       ├── sync.py                   # Sync service and logic
@@ -38,7 +43,8 @@ az-spotlight-style-storage/
 ├── Dockerfile                        # Container configuration
 ├── requirements.txt                  # Python dependencies
 ├── sample.REST                       # Sample API requests
-└── styles.json                       # Style transformation configurations
+├── styles.json                       # Style transformation configurations
+└── instructions.md                   # LLM context document
 ```
 
 ---

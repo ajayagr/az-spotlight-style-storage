@@ -69,6 +69,9 @@ stylesync_service = StyleSyncService(storage)
 # Setup Templates
 templates = Jinja2Templates(directory="app/templates")
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 # Security Configuration
 API_KEY = os.getenv("API_KEY", "default-insecure-key")
 
