@@ -227,8 +227,8 @@ StyleSync creates this folder structure:
 1. Add route handler in `app/main.py`
 2. Define Pydantic models if needed (request/response)
 3. Add example to `sample.REST`
-4. Update README.md API Reference section
-5. **Update this file** with endpoint details
+4. Update `README.md` API Reference section
+5. Update `instructions.md` with endpoint details (this file)
 
 ### Adding a New Style
 1. Edit `styles.json` - add new style object
@@ -239,13 +239,15 @@ StyleSync creates this folder structure:
 1. Edit `app/templates/index.html`
 2. Test file operations preserve toast notifications
 3. Ensure `refreshFileList()` is called after operations
+4. Update `instructions.md` if adding new key functions or patterns
 
 ### Adding AI Provider (future)
 1. Create new client in `app/stylesync/clients/`
 2. Inherit from `BaseGenerator`
 3. Implement `process_image_bytes()` method
 4. Update `get_generator()` factory in `clients/__init__.py`
-5. **Update this file** with new provider details
+5. Update `instructions.md` with new provider details
+6. Update `README.md` with new environment variables
 
 ---
 
@@ -268,4 +270,7 @@ StyleSync creates this folder structure:
    - Uploads, deletes, and StyleSync require API key
    - API key via header `X-API-Key` or query param `api_key`
 
-8. **Keep This Document Updated**: When making significant changes, update the relevant sections of this file.
+8. **Documentation Updates**: When making changes, update the appropriate documentation:
+   - **`instructions.md`** (this file): Update for architectural changes, new patterns, API changes, key function updates, or anything LLMs need to understand the codebase
+   - **`README.md`**: Update for user-facing changes like new features, API documentation, environment variables, or usage instructions
+   - **`sample.REST`**: Update when adding or modifying API endpoints
