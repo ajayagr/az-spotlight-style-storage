@@ -66,6 +66,20 @@ app = FastAPI(
 storage = StorageService()
 stylesync_service = StyleSyncService(storage)
 
+
+@app.get("/health", tags=["Health"])
+def health_check():
+    """
+    Health check endpoint for container orchestration and load balancers.
+    Returns basic application status.
+    """
+    return {
+        "status": "healthy",
+        "service": "az-spotlight-style-storage",
+        "storage_mode": storage.mode
+    }
+
+
 # Setup Templates
 templates = Jinja2Templates(directory="app/templates")
 
