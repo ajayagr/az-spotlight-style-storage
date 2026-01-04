@@ -671,7 +671,8 @@ curl "http://localhost:8000/stylesync/styles"
 | Field | Type | Description |
 |-------|------|-------------|
 | `index` | number | Unique style identifier |
-| `name` | string | Human-readable style name (used for output folder) |
+| `name` | string | Human-readable style name |
+| `folder_name` | string | Folder name for styled output (used by StyleSync) |
 | `prompt_text` | string | AI prompt describing the style transformation |
 | `strength` | number | Style intensity (0.0 - 1.0) |
 
@@ -782,18 +783,21 @@ StyleSync reads style definitions from the `styles.json` file in the project roo
     {
       "index": 1,
       "name": "Geometric 3D",
+      "folder_name": "geometric_3d",
       "prompt_text": "Transform this image into a geometric 3D art style with bold shapes and vibrant colors",
       "strength": 0.7
     },
     {
       "index": 2,
       "name": "Animated",
+      "folder_name": "animated",
       "prompt_text": "Convert this image to an animated cartoon style with smooth lines and expressive features",
       "strength": 0.75
     },
     {
       "index": 3,
       "name": "Vintage",
+      "folder_name": "vintage",
       "prompt_text": "Apply a vintage film photography look with muted colors and subtle grain",
       "strength": 0.6
     }
@@ -805,11 +809,12 @@ StyleSync reads style definitions from the `styles.json` file in the project roo
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `index` | number | Yes | Unique identifier for the style |
-| `name` | string | Yes | Human-readable name (used as output folder name) |
+| `name` | string | Yes | Human-readable style name |
+| `folder_name` | string | Yes | Folder name for styled output (used by StyleSync) |
 | `prompt_text` | string | Yes | AI prompt describing the desired transformation |
 | `strength` | number | No | Style intensity from 0.0 to 1.0 (default: 0.7) |
 
-> **Tip**: The `name` field is sanitized and used as the output folder name. Spaces are converted to underscores and special characters are removed.
+> **Tip**: The `folder_name` field specifies the output folder for styled images. If not provided, it falls back to sanitizing the `name` field (spaces to underscores, lowercase).
 
 ---
 

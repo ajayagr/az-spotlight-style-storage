@@ -89,7 +89,7 @@ az-spotlight-style-storage/
 ### `app/stylesync/sync.py`
 - **Purpose**: Core style transfer orchestration
 - **Key Classes**:
-  - `StyleConfig`: Style definition (name, prompt, strength)
+  - `StyleConfig`: Style definition (name, prompt, folder_name, strength)
   - `SyncTask`: Individual image-style transformation task
   - `SyncResult`: Operation result with processed/failed/skipped/deleted lists
   - `StyleSyncService`: Main service class
@@ -223,7 +223,7 @@ az-spotlight-style-storage/
 ### File Naming
 - Python: `snake_case.py`
 - Folders: `lowercase/`
-- Style folders: Sanitized from style name (spaces → underscores, lowercase)
+- Style folders: Uses `folder_name` from `styles.json` config (falls back to sanitized style name)
 
 ### Output Structure
 StyleSync creates this folder structure:
