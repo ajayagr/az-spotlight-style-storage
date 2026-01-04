@@ -776,3 +776,36 @@ input:checked + .slider::before {
     border-color: var(--primary-color);
     color: var(--primary-color);
 }
+
+.run-sync-btn {
+    background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.run-sync-btn:hover {
+    background: linear-gradient(135deg, #106ebe 0%, #0078d4 100%);
+    box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
+}
+
+.run-sync-btn:active {
+    transform: scale(0.98);
+}
+
+.run-sync-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.run-sync-btn .fa-sync-alt.spinning {
+    animation: spin 1s linear infinite;
+}

@@ -34,6 +34,9 @@
             <input type="checkbox" id="styleSyncToggle" checked>
             <i class="fas fa-magic"></i> Auto StyleSync
         </label>
+        <button class="run-sync-btn" id="runSyncBtn">
+            <i class="fas fa-sync-alt"></i> Run Sync
+        </button>
         <button class="view-styles-btn" id="viewStylesBtn">
             <i class="fas fa-palette"></i> View Styles
         </button>
@@ -135,6 +138,9 @@
     
     // View styles button
     document.getElementById('viewStylesBtn').addEventListener('click', showStylesModal);
+    
+    // Run sync button
+    document.getElementById('runSyncBtn').addEventListener('click', runManualSync);
     
     // Close styles modal button
     document.getElementById('closeStylesModalBtn').addEventListener('click', hideStylesModal);

@@ -427,6 +427,49 @@ async function triggerStyleSync(key, sourcePath = '', successMessage) {
 }
 
 /**
+ * Run StyleSync manually via button click
+ */
+async function runManualSync() {
+    const key = elements.apiKey.value;
+    if (!key) {
+        showToast('API Key Required', 'Please enter your API key to run StyleSync.', 'error');
+        elements.apiKey.focus();
+        return;
+    }
+    
+    const btn = document.getElementById('runSyncBtn');
+    const icon = btn.querySelector('.fa-sync-alt');
+    
+    // Disable button and show spinning icon
+    btn.disabled = true;
+    icon.classList.add('spinning');
+    
+    try {
+        const response = await fetch('/stylesync/async', {
+            method: 'POST',
+            headers: { 'X-API-Key': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast('StyleSync Started', 'Processing images in background...', 'success');
+            pollStyleSyncStatus(result.job_id);
+        } else {
+            const error = await response.json().catch(() => ({}));
+            showToast('StyleSync Failed', error.detail || 'Failed to start StyleSync.', 'error');
+        }
+    } catch (error) {
+        console.error('Manual StyleSync error:', error);
+        showToast('StyleSync Error', 'An error occurred while starting StyleSync.', 'error');
+    } finally {
+        // Re-enable button and stop spinning
+        btn.disabled = false;
+        icon.classList.remove('spinning');
+    }
+}
+
+/**
  * Download or view a file
  */
 function downloadFile(filename) {
