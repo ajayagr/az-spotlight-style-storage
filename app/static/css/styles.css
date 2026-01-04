@@ -619,15 +619,22 @@ input:checked + .slider::before {
     background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
     color: white;
     padding: 12px 20px;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     z-index: 1003;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     animation: slideDown 0.25s ease-out;
     transform: translateZ(0);
     will-change: transform;
+}
+
+/* Push content down when banner is visible */
+.stylesync-banner:not(.hidden) ~ .container,
+body:has(.stylesync-banner:not(.hidden)) .container {
+    padding-top: 60px;
 }
 
 @keyframes slideDown {
