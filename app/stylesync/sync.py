@@ -36,6 +36,7 @@ class StyleConfig:
     index: int
     name: str
     prompt_text: str
+    folder_name: str = ""  # Folder name from config, falls back to sanitized name
     strength: float = 0.7
 
 
@@ -123,7 +124,8 @@ class StyleSyncService:
         for item in valid_images:
             for style in styles:
                 # Use original filename, organized by style folder
-                style_folder = sanitize_folder_name(style.name)
+                # Use folder_name from config if available, otherwise sanitize the name
+                style_folder = style.folder_name if style.folder_name else sanitize_folder_name(style.name)
                 output_filename = item["name"]  # Keep original filename
                 
                 # Unique key combines style folder and filename
@@ -239,10 +241,14 @@ class StyleSyncService:
         # Convert style dicts to StyleConfig objects
         style_configs = []
         for s in styles:
+            # Get folder_name from config, fallback to sanitizing the name
+            name = s.get("name", "Style")
+            folder_name = s.get("folder_name") or sanitize_folder_name(name)
             style_configs.append(StyleConfig(
                 index=s.get("index", 1),
-                name=s.get("name", "Style"),
+                name=name,
                 prompt_text=s.get("prompt_text", ""),
+                folder_name=folder_name,
                 strength=s.get("strength", 0.7)
             ))
         
@@ -260,8 +266,8 @@ class StyleSyncService:
             return result
         
         try:
-            # Get style folder names for cleanup
-            style_folders = [sanitize_folder_name(s.name) for s in style_configs]
+            # Get style folder names for cleanup (use folder_name with fallback)
+            style_folders = [s.folder_name if s.folder_name else sanitize_folder_name(s.name) for s in style_configs]
             
             # Map expected state
             expected_state = self.map_expected_state(source_path, style_configs)
