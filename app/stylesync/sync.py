@@ -83,17 +83,26 @@ class StyleSyncService:
         Get list of valid image files from source path.
         
         Args:
-            source_path: Path prefix to filter files
+            source_path: Path prefix to filter files. Only files within this path are included.
+                        If empty, no images are returned (source path is required).
             
         Returns:
             List of dicts with 'name' and 'path' keys
         """
+        # Source path is required - if empty, return no images
+        if not source_path or not source_path.strip("/"):
+            logger.warning("No source path provided for get_valid_images - returning empty list")
+            return []
+        
         all_files = self.storage.list_files()
         valid_images = []
         
+        # Normalize source path for comparison
+        normalized_source = source_path.strip("/")
+        
         for file_path in all_files:
-            # Filter by source path prefix
-            if source_path and not file_path.startswith(source_path.strip("/")):
+            # File must be within the source path
+            if not file_path.startswith(normalized_source + "/") and file_path != normalized_source:
                 continue
                 
             # Check extension
