@@ -11,6 +11,7 @@ from typing import List, Optional
 import random
 from .storage import StorageService
 from .stylesync import StyleSyncService
+from .momentsync import MomentSyncService
 import mimetypes
 
 # Configure logging
@@ -19,11 +20,15 @@ logger = logging.getLogger(__name__)
 
 # Styles configuration file path
 STYLES_FILE_PATH = Path(__file__).parent.parent / "styles.json"
+MOMENTS_FILE_PATH = Path(__file__).parent.parent / "moments.json"
 
 # StyleSync default folder configuration
 STYLE_SYNC_DEFAULT_SOURCE = os.getenv("STYLE_SYNC_DEFAULT_SOURCE_FOLDER", "source/")
 STYLE_SYNC_DEFAULT_TARGET = os.getenv("STYLE_SYNC_DEFAULT_TARGET_FOLDER", "styled/")
 STYLE_SYNC_ICON_FOLDER = os.getenv("STYLE_SYNC_ICON_FOLDER", "icons/")
+
+# MomentSync default folder configuration
+MOMENT_SYNC_DEFAULT_OUTPUT = os.getenv("MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER", "moments/")
 
 
 def load_styles_from_file() -> List[dict]:
@@ -65,6 +70,18 @@ app = FastAPI(
 )
 storage = StorageService()
 stylesync_service = StyleSyncService(storage)
+momentsync_service = MomentSyncService(storage)
+
+
+def load_moments_from_file() -> dict:
+    """
+    Load moment configurations from moments.json file.
+    """
+    if not MOMENTS_FILE_PATH.exists():
+        raise FileNotFoundError(f"Moments file not found: {MOMENTS_FILE_PATH}")
+    
+    with open(MOMENTS_FILE_PATH, "r") as f:
+        return json.load(f)
 
 
 @app.get("/health", tags=["Health"])
@@ -646,3 +663,227 @@ def list_providers():
         ]
     }
 
+
+# ============================================================================
+# MomentSync API Endpoints
+# ============================================================================
+
+class MomentSyncRequest(BaseModel):
+    """Request body for MomentSync operation."""
+    styled_path: Optional[str] = Field(
+        default=None,
+        description="Path containing styled images. Falls back to STYLE_SYNC_DEFAULT_TARGET_FOLDER env var."
+    )
+    output_path: Optional[str] = Field(
+        default=None,
+        description="Output path for moment variations. Falls back to MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER env var."
+    )
+    style_folders: Optional[List[str]] = Field(
+        default=None,
+        description="Specific style folders to process. If empty, processes all style folders."
+    )
+
+
+class MomentSyncResponse(BaseModel):
+    """Response from MomentSync operation."""
+    status: str
+    source: str
+    output: str
+    processed: List[str] = []
+    failed: List[str] = []
+    skipped: List[str] = []
+    deleted: List[str] = []
+    error: Optional[str] = None
+
+
+# Store for tracking background moment sync jobs
+moment_sync_jobs: dict = {}
+
+
+@app.post("/momentsync", response_model=MomentSyncResponse, tags=["MomentSync"])
+def run_momentsync(
+    request: MomentSyncRequest,
+    auth: str = Depends(get_api_key)
+):
+    """
+    Execute MomentSync operation synchronously.
+    
+    Applies time-of-day and season transformations to styled images.
+    Creates 24 variations per styled image (4 times + 4 seasons + 16 composites).
+    Moments configuration is loaded from moments.json.
+    This operation runs synchronously and may take significant time.
+    
+    Requires API Key authentication.
+    """
+    try:
+        # Load moments config
+        moments_config = load_moments_from_file()
+        
+        # Use request values or fall back to environment defaults
+        styled_path = request.styled_path if request.styled_path is not None else STYLE_SYNC_DEFAULT_TARGET
+        output_path = request.output_path if request.output_path is not None else MOMENT_SYNC_DEFAULT_OUTPUT
+        
+        result = momentsync_service.process_sync(
+            styled_path=styled_path,
+            output_path=output_path,
+            moments_config=moments_config,
+            style_folders=request.style_folders,
+            provider="azure"
+        )
+        
+        return MomentSyncResponse(
+            status=result.status,
+            source=result.source,
+            output=result.output,
+            processed=result.processed,
+            failed=result.failed,
+            skipped=result.skipped,
+            deleted=result.deleted,
+            error=result.error
+        )
+        
+    except FileNotFoundError as e:
+        logger.error(f"Moments file not found: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logger.error(f"MomentSync error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/momentsync/async", tags=["MomentSync"])
+async def run_momentsync_async(
+    request: MomentSyncRequest,
+    background_tasks: BackgroundTasks,
+    auth: str = Depends(get_api_key)
+):
+    """
+    Execute MomentSync operation asynchronously in the background.
+    
+    Moments configuration is loaded from moments.json. Returns immediately with a job ID.
+    Use GET /momentsync/status/{job_id} to check the status of the operation.
+    
+    Requires API Key authentication.
+    """
+    import uuid
+    job_id = str(uuid.uuid4())
+    
+    # Load moments config (validate before starting job)
+    try:
+        moments_config = load_moments_from_file()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    # Use request values or fall back to environment defaults
+    styled_path = request.styled_path if request.styled_path is not None else STYLE_SYNC_DEFAULT_TARGET
+    output_path = request.output_path if request.output_path is not None else MOMENT_SYNC_DEFAULT_OUTPUT
+    
+    # Initialize job status
+    moment_sync_jobs[job_id] = {
+        "status": "running",
+        "source": styled_path,
+        "output": output_path,
+        "processed": [],
+        "failed": [],
+        "skipped": [],
+        "deleted": [],
+        "error": None
+    }
+    
+    def run_moment_sync_background():
+        try:
+            result = momentsync_service.process_sync(
+                styled_path=styled_path,
+                output_path=output_path,
+                moments_config=moments_config,
+                style_folders=request.style_folders,
+                provider="azure"
+            )
+            moment_sync_jobs[job_id] = {
+                "status": result.status,
+                "source": result.source,
+                "output": result.output,
+                "processed": result.processed,
+                "failed": result.failed,
+                "skipped": result.skipped,
+                "deleted": result.deleted,
+                "error": result.error
+            }
+        except Exception as e:
+            logger.error(f"Background MomentSync error: {e}")
+            moment_sync_jobs[job_id]["status"] = "failed"
+            moment_sync_jobs[job_id]["error"] = str(e)
+    
+    background_tasks.add_task(run_moment_sync_background)
+    
+    return {
+        "job_id": job_id,
+        "status": "started",
+        "message": "MomentSync job started in background",
+        "styled_path": styled_path,
+        "output_path": output_path
+    }
+
+
+@app.get("/momentsync/status/{job_id}", tags=["MomentSync"])
+def get_momentsync_status(job_id: str):
+    """
+    Check the status of a background MomentSync job.
+    
+    Returns the current status and results of the specified job.
+    """
+    if job_id not in moment_sync_jobs:
+        raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
+    
+    job = moment_sync_jobs[job_id]
+    return MomentSyncResponse(
+        status=job["status"],
+        source=job["source"],
+        output=job["output"],
+        processed=job.get("processed", []),
+        failed=job.get("failed", []),
+        skipped=job.get("skipped", []),
+        deleted=job.get("deleted", []),
+        error=job["error"]
+    )
+
+
+@app.get("/momentsync/moments", tags=["MomentSync"])
+def get_configured_moments():
+    """
+    Get the list of configured moments from moments.json.
+    
+    Returns all time-of-day and season configurations.
+    """
+    try:
+        config = load_moments_from_file()
+        times = config.get("times_of_day", [])
+        seasons = config.get("seasons", [])
+        
+        # Build composite list
+        composites = []
+        for t in times:
+            for s in seasons:
+                composites.append({
+                    "name": f"{t['name']} + {s['name']}",
+                    "folder_name": f"{t.get('folder_name', t['name'].lower())}_{s.get('folder_name', s['name'].lower())}"
+                })
+        
+        return {
+            "times_of_day": {
+                "count": len(times),
+                "items": times
+            },
+            "seasons": {
+                "count": len(seasons),
+                "items": seasons
+            },
+            "composites": {
+                "count": len(composites),
+                "items": composites
+            },
+            "total_variations": len(times) + len(seasons) + len(composites)
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

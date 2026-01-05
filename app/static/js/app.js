@@ -470,6 +470,104 @@ async function runManualSync() {
 }
 
 /**
+ * Run MomentSync manually via button click
+ */
+async function runMomentSync() {
+    const key = elements.apiKey.value;
+    if (!key) {
+        showToast('API Key Required', 'Please enter your API key to run MomentSync.', 'error');
+        elements.apiKey.focus();
+        return;
+    }
+    
+    const btn = document.getElementById('runMomentsBtn');
+    const icon = btn.querySelector('.fa-clock');
+    
+    // Disable button and show spinning icon
+    btn.disabled = true;
+    icon.classList.add('spinning');
+    
+    try {
+        const response = await fetch('/momentsync/async', {
+            method: 'POST',
+            headers: { 'X-API-Key': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast('MomentSync Started', 'Creating time & season variations...', 'success');
+            pollMomentSyncStatus(result.job_id);
+        } else {
+            const error = await response.json().catch(() => ({}));
+            showToast('MomentSync Failed', error.detail || 'Failed to start MomentSync.', 'error');
+        }
+    } catch (error) {
+        console.error('MomentSync error:', error);
+        showToast('MomentSync Error', 'An error occurred while starting MomentSync.', 'error');
+    } finally {
+        // Re-enable button and stop spinning
+        btn.disabled = false;
+        icon.classList.remove('spinning');
+    }
+}
+
+/**
+ * Poll MomentSync job status
+ */
+async function pollMomentSyncStatus(jobId) {
+    // Show progress banner
+    elements.styleSyncBanner.classList.remove('hidden');
+    elements.styleSyncBanner.querySelector('.banner-text').textContent = 'MomentSync Processing';
+    elements.bannerStatus.textContent = 'Starting...';
+    
+    const poll = async () => {
+        try {
+            const response = await fetch(`/momentsync/status/${jobId}`);
+            if (!response.ok) {
+                throw new Error('Failed to get job status');
+            }
+            
+            const result = await response.json();
+            
+            if (result.status === 'running') {
+                const processed = result.processed?.length || 0;
+                elements.bannerStatus.textContent = `Processing... (${processed} completed)`;
+                setTimeout(poll, 10000); // Poll every 10 seconds
+            } else {
+                // Job completed
+                const processed = result.processed?.length || 0;
+                const failed = result.failed?.length || 0;
+                
+                if (result.status === 'completed') {
+                    elements.bannerStatus.textContent = `Done! ${processed} processed, ${failed} failed`;
+                    showToast('MomentSync Complete', `Created ${processed} moment variations`, 'success');
+                } else {
+                    elements.bannerStatus.textContent = `Failed: ${result.error || 'Unknown error'}`;
+                    showToast('MomentSync Failed', result.error || 'Unknown error', 'error');
+                }
+                
+                // Hide banner after 3 seconds
+                setTimeout(() => {
+                    elements.styleSyncBanner.classList.add('hidden');
+                }, 3000);
+                
+                refreshFileList();
+            }
+        } catch (error) {
+            console.error('Error polling MomentSync status:', error);
+            elements.bannerStatus.textContent = 'Error checking status';
+            setTimeout(() => {
+                elements.styleSyncBanner.classList.add('hidden');
+            }, 3000);
+        }
+    };
+    
+    // Start polling after 3 seconds
+    setTimeout(poll, 3000);
+}
+
+/**
  * Download or view a file
  */
 function downloadFile(filename) {

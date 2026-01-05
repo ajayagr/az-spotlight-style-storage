@@ -1,0 +1,56 @@
+{
+  "times_of_day": [
+    {
+      "name": "Morning",
+      "folder_name": "morning",
+      "prompt_text": "Transform the lighting and atmosphere to early morning with soft golden sunrise light, gentle warm hues, light mist, dew drops, and the peaceful ambiance of dawn breaking",
+      "strength": 0.6
+    },
+    {
+      "name": "Afternoon",
+      "folder_name": "afternoon",
+      "prompt_text": "Transform the lighting and atmosphere to bright afternoon with strong overhead sunlight, clear blue skies, defined shadows, vibrant colors, and the energetic warmth of midday",
+      "strength": 0.6
+    },
+    {
+      "name": "Evening",
+      "folder_name": "evening",
+      "prompt_text": "Transform the lighting and atmosphere to golden hour evening with warm orange and pink sunset hues, long dramatic shadows, rich warm tones, and the romantic glow of dusk",
+      "strength": 0.6
+    },
+    {
+      "name": "Night",
+      "folder_name": "night",
+      "prompt_text": "Transform the lighting and atmosphere to nighttime with deep blue darkness, moonlight illumination, starry sky, artificial lights glowing, and the mysterious ambiance of night",
+      "strength": 0.65
+    }
+  ],
+  "seasons": [
+    {
+      "name": "Summer",
+      "folder_name": "summer",
+      "prompt_text": "Transform the environment to summer season with lush green foliage, bright vibrant colors, clear sunny atmosphere, warm golden lighting, and the feeling of peak warmth",
+      "strength": 0.6
+    },
+    {
+      "name": "Winter",
+      "folder_name": "winter",
+      "prompt_text": "Transform the environment to winter season with snow coverage, frost, bare trees, cool blue-white tones, overcast skies, and the crisp cold atmosphere of winter",
+      "strength": 0.65
+    },
+    {
+      "name": "Rain",
+      "folder_name": "rain",
+      "prompt_text": "Transform the environment to rainy weather with rainfall, wet surfaces with reflections, overcast grey skies, puddles, glistening textures, and moody atmospheric conditions",
+      "strength": 0.6
+    },
+    {
+      "name": "Spring",
+      "folder_name": "spring",
+      "prompt_text": "Transform the environment to spring season with blooming flowers, fresh green leaves, cherry blossoms, soft pastel colors, gentle light, and the rejuvenating atmosphere of spring",
+      "strength": 0.6
+    }
+  ],
+  "composite_strength": 0.65,
+  "composite_prompt_template": "Transform this image to depict {time} during {season}. Combine {time_desc} with {season_desc}"
+}

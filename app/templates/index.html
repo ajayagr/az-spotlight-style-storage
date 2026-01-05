@@ -37,6 +37,9 @@
         <button class="run-sync-btn" id="runSyncBtn">
             <i class="fas fa-sync-alt"></i> Run Sync
         </button>
+        <button class="run-moments-btn" id="runMomentsBtn">
+            <i class="fas fa-clock"></i> Run Moments
+        </button>
         <button class="view-styles-btn" id="viewStylesBtn">
             <i class="fas fa-palette"></i> View Styles
         </button>
@@ -141,6 +144,9 @@
     
     // Run sync button
     document.getElementById('runSyncBtn').addEventListener('click', runManualSync);
+    
+    // Run moments button
+    document.getElementById('runMomentsBtn').addEventListener('click', runMomentSync);
     
     // Close styles modal button
     document.getElementById('closeStylesModalBtn').addEventListener('click', hideStylesModal);

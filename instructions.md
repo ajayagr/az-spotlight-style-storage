@@ -54,10 +54,14 @@ az-spotlight-style-storage/
 │           ├── __init__.py      # get_generator factory
 │           ├── base.py          # BaseGenerator, GeneratorResult
 │           └── azure.py         # AzureGenerator (Azure OpenAI)
+│   └── momentsync/              # Moment-in-Time Variations Module
+│       ├── __init__.py          # Module exports
+│       └── sync.py              # MomentSyncService, MomentConfig, MomentSyncResult
 ├── Dockerfile                   # Container configuration
 ├── requirements.txt             # Python dependencies
 ├── sample.REST                  # API examples for VS Code REST Client
 ├── styles.json                  # Style configurations (prompts, strength)
+├── moments.json                 # Moment configurations (time of day, seasons)
 └── instructions.md              # This file - LLM context document
 ```
 
@@ -156,6 +160,42 @@ az-spotlight-style-storage/
   ```
 - **Used By**: `/stylesync/styles` endpoint and `process_sync()` method
 
+### `moments.json`
+- **Purpose**: Moment-in-time variation configuration
+- **Structure**:
+  ```json
+  {
+    "times_of_day": [
+      { "name": "Morning", "folder_name": "morning", "prompt_text": "...", "strength": 0.6 }
+    ],
+    "seasons": [
+      { "name": "Summer", "folder_name": "summer", "prompt_text": "...", "strength": 0.6 }
+    ],
+    "composite_strength": 0.65
+  }
+  ```
+- **Variations Created**:
+  - 4 standalone times: morning, afternoon, evening, night
+  - 4 standalone seasons: summer, winter, rain, spring
+  - 16 composites: time + season combinations (e.g., morning_summer)
+  - **Total: 24 variations per styled image**
+- **Used By**: `/momentsync/moments` endpoint and `MomentSyncService.process_sync()`
+
+### `app/momentsync/sync.py`
+- **Purpose**: Moment-in-time variation orchestration
+- **Key Classes**:
+  - `MomentConfig`: Time/season definition (name, folder_name, prompt, strength)
+  - `CompositeMoment`: Combined time + season configuration
+  - `MomentTask`: Individual moment transformation task
+  - `MomentSyncResult`: Operation result with processed/failed/skipped/deleted lists
+  - `MomentSyncService`: Main service class
+- **Key Methods**:
+  - `build_moments()`: Creates moment configs from JSON
+  - `get_styled_images()`: Lists styled images to process
+  - `map_expected_state()`: Builds expected output file map
+  - `get_missing_files()`: Identifies which files need generation
+  - `process_sync()`: Executes full moment sync operation
+
 ---
 
 ## API Endpoints Summary
@@ -187,6 +227,14 @@ az-spotlight-style-storage/
 | GET | `/stylesync/styles` | No | Get configured styles |
 | GET | `/stylesync/providers` | No | List AI providers |
 
+### MomentSync
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/momentsync` | Yes | Run moment sync (synchronous) |
+| POST | `/momentsync/async` | Yes | Run moment sync (background job) |
+| GET | `/momentsync/status/{job_id}` | No | Check job status |
+| GET | `/momentsync/moments` | No | Get configured moments |
+
 ---
 
 ## Environment Variables
@@ -199,6 +247,7 @@ az-spotlight-style-storage/
 | `STYLE_SYNC_DEFAULT_SOURCE_FOLDER` | No | `source/` | Default source path for StyleSync |
 | `STYLE_SYNC_DEFAULT_TARGET_FOLDER` | No | `styled/` | Default output path for StyleSync |
 | `STYLE_SYNC_ICON_FOLDER` | No | `icons/` | Folder for style icons |
+| `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` | No | `moments/` | Default output path for MomentSync |
 | `AZURE_OPENAI_ENDPOINT` | For StyleSync | - | Azure OpenAI endpoint URL |
 | `AZURE_OPENAI_API_KEY` | For StyleSync | - | Azure OpenAI API key |
 | `AZURE_OPENAI_MODEL` | No | `flux.1-kontext-pro` | Model deployment name |
@@ -235,6 +284,21 @@ StyleSync creates this folder structure:
 │   └── image.jpg
 └── style_name_2/       # Second style outputs
     └── image.jpg
+```
+
+MomentSync creates this folder structure:
+```
+<moments_output_path>/
+├── style_name_1/           # Per-style moment variations
+│   ├── morning/            # Time of day
+│   │   └── image.jpg
+│   ├── summer/             # Season
+│   │   └── image.jpg
+│   ├── morning_summer/     # Composite (time + season)
+│   │   └── image.jpg
+│   └── ...                 # 24 moment folders per style
+└── style_name_2/
+    └── ...
 ```
 
 ---

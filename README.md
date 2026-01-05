@@ -8,6 +8,7 @@ A comprehensive Azure-based file storage and AI image style transfer application
 - **File Management API**: RESTful API for uploading, downloading, listing, and deleting files
 - **Web UI**: Built-in file explorer interface with grid/list view toggle
 - **Integrated AI Style Transfer**: Built-in StyleSync service for batch processing images with AI-generated styles
+- **Moment-in-Time Variations**: MomentSync creates time-of-day and season variations (24 per styled image)
 - **Azure OpenAI Integration**: Uses Azure OpenAI Flux model for high-quality image generation
 - **Sync & Async Operations**: Run style transfers synchronously or as background jobs
 - **API Key Authentication**: Secure endpoints with configurable API key protection
@@ -715,6 +716,120 @@ curl "http://localhost:8000/stylesync/providers"
 
 ---
 
+## 🕐 MomentSync APIs
+
+MomentSync creates time-of-day and season variations of styled images. For each styled image, it generates:
+- **4 standalone times**: morning, afternoon, evening, night
+- **4 standalone seasons**: summer, winter, rain, spring
+- **16 composites**: all time + season combinations
+- **Total: 24 variations per styled image**
+
+### 1. Run MomentSync (Synchronous)
+
+```http
+POST /momentsync
+```
+
+Apply moment variations to styled images synchronously.
+
+**Authentication**: Required
+
+**Request Body**:
+```json
+{
+  "styled_path": "styled/",
+  "output_path": "moments/",
+  "style_folders": ["geometric_3d", "anime"]
+}
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `styled_path` | string | No | Path containing styled images. Defaults to `STYLE_SYNC_DEFAULT_TARGET_FOLDER` |
+| `output_path` | string | No | Output path for moment variations. Defaults to `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` |
+| `style_folders` | array | No | Specific style folders to process. If empty, processes all |
+
+---
+
+### 2. Run MomentSync (Async)
+
+```http
+POST /momentsync/async
+```
+
+Start a background MomentSync job. Returns immediately with a job ID.
+
+**Authentication**: Required
+
+**Response**:
+```json
+{
+  "job_id": "abc-123-def",
+  "status": "started",
+  "message": "MomentSync job started in background",
+  "styled_path": "styled/",
+  "output_path": "moments/"
+}
+```
+
+---
+
+### 3. Check MomentSync Status
+
+```http
+GET /momentsync/status/{job_id}
+```
+
+Check the status of a background MomentSync job.
+
+**Authentication**: Not required
+
+**Response**:
+```json
+{
+  "status": "completed",
+  "source": "styled/",
+  "output": "moments/",
+  "processed": ["geometric_3d/morning/image.jpg", "geometric_3d/summer/image.jpg"],
+  "failed": [],
+  "skipped": [],
+  "deleted": []
+}
+```
+
+---
+
+### 4. Get Configured Moments
+
+```http
+GET /momentsync/moments
+```
+
+Get the list of moment configurations from moments.json.
+
+**Authentication**: Not required
+
+**Response**:
+```json
+{
+  "times_of_day": {
+    "count": 4,
+    "items": [{"name": "Morning", "folder_name": "morning", "prompt_text": "...", "strength": 0.6}]
+  },
+  "seasons": {
+    "count": 4,
+    "items": [{"name": "Summer", "folder_name": "summer", "prompt_text": "...", "strength": 0.6}]
+  },
+  "composites": {
+    "count": 16,
+    "items": [{"name": "Morning + Summer", "folder_name": "morning_summer"}]
+  },
+  "total_variations": 24
+}
+```
+
+---
+
 ## ⚙️ Environment Variables
 
 ### Application Configuration
@@ -727,6 +842,7 @@ curl "http://localhost:8000/stylesync/providers"
 | `STYLE_SYNC_DEFAULT_SOURCE_FOLDER` | No | `""` | Default source path for StyleSync when not specified in request |
 | `STYLE_SYNC_DEFAULT_TARGET_FOLDER` | No | `styled/` | Default output path for StyleSync when not specified in request |
 | `STYLE_SYNC_ICON_FOLDER` | No | `icons/` | Folder where style icons are stored |
+| `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` | No | `moments/` | Default output path for MomentSync moment variations |
 
 ### Azure OpenAI Provider Configuration
 
