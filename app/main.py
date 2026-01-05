@@ -442,9 +442,15 @@ class StyleSyncResponse(BaseModel):
     status: str
     source: str
     output: str
-    processed: List[str]
-    failed: List[str]
-    skipped: List[str]
+    # Expected counts (available immediately for async jobs)
+    total_expected: int = 0  # Total images expected to be generated
+    to_generate: int = 0     # Number of images to be generated (missing)
+    to_skip: int = 0         # Number of images to be skipped (already exist)
+    to_delete: int = 0       # Number of orphaned files to be deleted
+    # Results (populated as processing completes)
+    processed: List[str] = []
+    failed: List[str] = []
+    skipped: List[str] = []
     deleted: List[str] = []  # Orphaned files that were deleted
     error: Optional[str] = None
 
@@ -485,10 +491,20 @@ def run_stylesync(
             provider="azure"
         )
         
+        # Calculate counts from results
+        to_generate = len(result.processed) + len(result.failed)
+        to_skip = len(result.skipped)
+        to_delete = len(result.deleted)
+        total_expected = to_generate + to_skip
+        
         return StyleSyncResponse(
             status=result.status,
             source=result.source,
             output=result.output,
+            total_expected=total_expected,
+            to_generate=to_generate,
+            to_skip=to_skip,
+            to_delete=to_delete,
             processed=result.processed,
             failed=result.failed,
             skipped=result.skipped,
@@ -533,11 +549,39 @@ async def run_stylesync_async(
     source_path = request.source_path if request.source_path is not None else STYLE_SYNC_DEFAULT_SOURCE
     output_path = request.output_path if request.output_path is not None else STYLE_SYNC_DEFAULT_TARGET
     
-    # Initialize job status
+    # Calculate expected counts before starting the job
+    from .stylesync.sync import StyleConfig
+    style_configs = [
+        StyleConfig(
+            index=s.get("index", 0),
+            name=s["name"],
+            prompt_text=s["prompt_text"],
+            folder_name=s.get("folder_name", ""),
+            strength=s.get("strength", 0.7)
+        )
+        for s in styles
+    ]
+    
+    # Map expected state and calculate counts
+    expected_state = stylesync_service.map_expected_state(source_path, style_configs)
+    missing_tasks = stylesync_service.get_missing_files(expected_state, output_path)
+    style_folders = [sc.folder_name if sc.folder_name else sc.name.lower().replace(' ', '_') for sc in style_configs]
+    orphaned_files = stylesync_service.get_orphaned_files(expected_state, output_path, style_folders)
+    
+    total_expected = len(expected_state)
+    to_generate = len(missing_tasks)
+    to_skip = total_expected - to_generate
+    to_delete = len(orphaned_files)
+    
+    # Initialize job status with counts
     sync_jobs[job_id] = {
         "status": "running",
         "source": source_path,
         "output": output_path,
+        "total_expected": total_expected,
+        "to_generate": to_generate,
+        "to_skip": to_skip,
+        "to_delete": to_delete,
         "processed": [],
         "failed": [],
         "skipped": [],
@@ -553,16 +597,14 @@ async def run_stylesync_async(
                 styles=styles,
                 provider="azure"
             )
-            sync_jobs[job_id] = {
+            sync_jobs[job_id].update({
                 "status": result.status,
-                "source": result.source,
-                "output": result.output,
                 "processed": result.processed,
                 "failed": result.failed,
                 "skipped": result.skipped,
                 "deleted": result.deleted,
                 "error": result.error
-            }
+            })
         except Exception as e:
             sync_jobs[job_id]["status"] = "failed"
             sync_jobs[job_id]["error"] = str(e)
@@ -572,7 +614,11 @@ async def run_stylesync_async(
     return {
         "job_id": job_id,
         "status": "started",
-        "message": "StyleSync job started. Use GET /stylesync/status/{job_id} to check progress."
+        "message": "StyleSync job started. Use GET /stylesync/status/{job_id} to check progress.",
+        "total_expected": total_expected,
+        "to_generate": to_generate,
+        "to_skip": to_skip,
+        "to_delete": to_delete
     }
 
 
@@ -591,6 +637,10 @@ def get_stylesync_status(job_id: str):
         status=job["status"],
         source=job["source"],
         output=job["output"],
+        total_expected=job.get("total_expected", 0),
+        to_generate=job.get("to_generate", 0),
+        to_skip=job.get("to_skip", 0),
+        to_delete=job.get("to_delete", 0),
         processed=job["processed"],
         failed=job["failed"],
         skipped=job["skipped"],
@@ -689,6 +739,12 @@ class MomentSyncResponse(BaseModel):
     status: str
     source: str
     output: str
+    # Expected counts (available immediately for async jobs)
+    total_expected: int = 0  # Total moment images expected
+    to_generate: int = 0     # Number of images to be generated (missing)
+    to_skip: int = 0         # Number of images to be skipped (already exist)
+    to_delete: int = 0       # Number of orphaned files to be deleted
+    # Results (populated as processing completes)
     processed: List[str] = []
     failed: List[str] = []
     skipped: List[str] = []
@@ -731,10 +787,20 @@ def run_momentsync(
             provider="azure"
         )
         
+        # Calculate counts from results
+        to_generate = len(result.processed) + len(result.failed)
+        to_skip = len(result.skipped)
+        to_delete = len(result.deleted)
+        total_expected = to_generate + to_skip
+        
         return MomentSyncResponse(
             status=result.status,
             source=result.source,
             output=result.output,
+            total_expected=total_expected,
+            to_generate=to_generate,
+            to_skip=to_skip,
+            to_delete=to_delete,
             processed=result.processed,
             failed=result.failed,
             skipped=result.skipped,
@@ -777,11 +843,44 @@ async def run_momentsync_async(
     styled_path = request.styled_path if request.styled_path is not None else STYLE_SYNC_DEFAULT_TARGET
     output_path = request.output_path if request.output_path is not None else MOMENT_SYNC_DEFAULT_OUTPUT
     
-    # Initialize job status
+    # Calculate expected counts before starting the job
+    # Get style folders to process
+    all_files = momentsync_service.storage.list_files()
+    available_style_folders = set()
+    normalized_styled = styled_path.strip("/")
+    for f in all_files:
+        if f.startswith(normalized_styled + "/"):
+            rel = f[len(normalized_styled) + 1:]
+            parts = rel.split("/")
+            if len(parts) >= 2 and parts[0] != "original":
+                available_style_folders.add(parts[0])
+    
+    style_folders_to_process = request.style_folders if request.style_folders else list(available_style_folders)
+    
+    # Build moments and calculate expected state
+    times, seasons, composites = momentsync_service.build_moments(moments_config)
+    styled_images = momentsync_service.get_styled_images(styled_path, style_folders_to_process)
+    expected_state = momentsync_service.map_expected_state(styled_images, times, seasons, composites)
+    missing_tasks = momentsync_service.get_missing_files(expected_state, output_path)
+    
+    # Get moment folder names for orphan detection
+    moment_folders = [t.folder_name for t in times] + [s.folder_name for s in seasons] + [c.folder_name for c in composites]
+    orphaned_files = momentsync_service.get_orphaned_files(expected_state, output_path, style_folders_to_process, moment_folders)
+    
+    total_expected = len(expected_state)
+    to_generate = len(missing_tasks)
+    to_skip = total_expected - to_generate
+    to_delete = len(orphaned_files)
+    
+    # Initialize job status with counts
     moment_sync_jobs[job_id] = {
         "status": "running",
         "source": styled_path,
         "output": output_path,
+        "total_expected": total_expected,
+        "to_generate": to_generate,
+        "to_skip": to_skip,
+        "to_delete": to_delete,
         "processed": [],
         "failed": [],
         "skipped": [],
@@ -798,16 +897,14 @@ async def run_momentsync_async(
                 style_folders=request.style_folders,
                 provider="azure"
             )
-            moment_sync_jobs[job_id] = {
+            moment_sync_jobs[job_id].update({
                 "status": result.status,
-                "source": result.source,
-                "output": result.output,
                 "processed": result.processed,
                 "failed": result.failed,
                 "skipped": result.skipped,
                 "deleted": result.deleted,
                 "error": result.error
-            }
+            })
         except Exception as e:
             logger.error(f"Background MomentSync error: {e}")
             moment_sync_jobs[job_id]["status"] = "failed"
@@ -820,7 +917,11 @@ async def run_momentsync_async(
         "status": "started",
         "message": "MomentSync job started in background",
         "styled_path": styled_path,
-        "output_path": output_path
+        "output_path": output_path,
+        "total_expected": total_expected,
+        "to_generate": to_generate,
+        "to_skip": to_skip,
+        "to_delete": to_delete
     }
 
 
@@ -839,6 +940,10 @@ def get_momentsync_status(job_id: str):
         status=job["status"],
         source=job["source"],
         output=job["output"],
+        total_expected=job.get("total_expected", 0),
+        to_generate=job.get("to_generate", 0),
+        to_skip=job.get("to_skip", 0),
+        to_delete=job.get("to_delete", 0),
         processed=job.get("processed", []),
         failed=job.get("failed", []),
         skipped=job.get("skipped", []),

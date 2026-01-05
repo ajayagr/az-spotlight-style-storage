@@ -849,3 +849,36 @@ body:has(.stylesync-banner:not(.hidden)) .container {
 .run-moments-btn .fa-clock.spinning {
     animation: spin 1s linear infinite;
 }
+
+.refresh-btn {
+    background: linear-gradient(135deg, #107c10 0%, #0b5c0b 100%);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.refresh-btn:hover {
+    background: linear-gradient(135deg, #0b5c0b 0%, #107c10 100%);
+    box-shadow: 0 2px 8px rgba(16, 124, 16, 0.3);
+}
+
+.refresh-btn:active {
+    transform: scale(0.98);
+}
+
+.refresh-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.refresh-btn .fa-redo.fa-spin {
+    animation: spin 1s linear infinite;
+}

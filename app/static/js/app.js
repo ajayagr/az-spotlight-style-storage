@@ -243,6 +243,7 @@ function closeModalAndRefresh() {
 
 /**
  * Fetch files from API and update the page dynamically
+ * Uses full replacement (called after uploads/deletes)
  */
 async function refreshFileList() {
     try {
@@ -283,6 +284,112 @@ async function refreshFileList() {
     } catch (error) {
         console.error('Error refreshing file list:', error);
         showToast('Error', 'Failed to refresh file list', 'error');
+    }
+}
+
+/**
+ * Smart refresh - only adds/removes files that changed
+ * Preserves existing DOM elements for unchanged files
+ */
+async function smartRefreshFileList() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshIcon = refreshBtn?.querySelector('i');
+    
+    try {
+        // Show loading state
+        if (refreshIcon) {
+            refreshIcon.classList.add('fa-spin');
+        }
+        
+        const response = await fetch('/files');
+        if (!response.ok) throw new Error('Failed to fetch files');
+        
+        const { files = [] } = await response.json();
+        const newFilesSet = new Set(files);
+        
+        // Get current files from DOM
+        const currentCards = elements.fileView.querySelectorAll('.file-card');
+        const currentFilesMap = new Map();
+        
+        currentCards.forEach(card => {
+            currentFilesMap.set(card.dataset.path, card);
+        });
+        
+        // Handle empty state
+        const emptyState = elements.fileView.querySelector('.empty-state');
+        
+        if (files.length === 0) {
+            // Remove all cards and show empty state
+            currentCards.forEach(card => card.remove());
+            if (!emptyState) {
+                elements.fileView.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-box-open" style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;"></i>
+                        <h3>No files yet</h3>
+                        <p>Upload a file to get started.</p>
+                    </div>
+                `;
+            }
+            buildFolderView();
+            showToast('Refreshed', 'File list is up to date', 'info');
+            return;
+        }
+        
+        // Remove empty state if it exists
+        if (emptyState) {
+            emptyState.remove();
+        }
+        
+        let addedCount = 0;
+        let removedCount = 0;
+        
+        // Remove files that no longer exist
+        currentFilesMap.forEach((card, path) => {
+            if (!newFilesSet.has(path)) {
+                card.remove();
+                removedCount++;
+            }
+        });
+        
+        // Add new files that don't exist in DOM
+        const fragment = document.createDocumentFragment();
+        files.forEach(file => {
+            if (!currentFilesMap.has(file)) {
+                const parts = file.split('/');
+                const fileName = parts.at(-1);
+                const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+                fragment.append(createFileCard(file, fileName, folder));
+                addedCount++;
+            }
+        });
+        
+        if (fragment.childNodes.length > 0) {
+            elements.fileView.append(fragment);
+        }
+        
+        // Rebuild folder view if changes occurred
+        if (addedCount > 0 || removedCount > 0) {
+            buildFolderView();
+        }
+        
+        // Show result toast
+        if (addedCount > 0 || removedCount > 0) {
+            const messages = [];
+            if (addedCount > 0) messages.push(`${addedCount} added`);
+            if (removedCount > 0) messages.push(`${removedCount} removed`);
+            showToast('Refreshed', messages.join(', '), 'success');
+        } else {
+            showToast('Refreshed', 'No changes detected', 'info');
+        }
+        
+    } catch (error) {
+        console.error('Error refreshing file list:', error);
+        showToast('Error', 'Failed to refresh file list', 'error');
+    } finally {
+        // Reset loading state
+        if (refreshIcon) {
+            refreshIcon.classList.remove('fa-spin');
+        }
     }
 }
 
@@ -933,5 +1040,8 @@ Object.assign(window, {
     showStylesModal,
     hideStylesModal,
     closeModalAndRefresh,
-    toggleAllFolders
+    toggleAllFolders,
+    smartRefreshFileList,
+    runManualSync,
+    runMomentSync
 });
