@@ -89,7 +89,7 @@
             <div class="card-content">
                 <div class="thumb-container">
                     {% if file.path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
-                    <img src="/files/{{ file.path }}" class="thumb-img" alt="{{ file.name }}" loading="lazy">
+                    <img src="/thumbnail/{{ file.path }}" class="thumb-img" alt="{{ file.name }}" loading="lazy">
                     {% else %}
                         {% if file.path.endswith('.pdf') %}
                         <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
