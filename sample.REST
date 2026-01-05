@@ -18,6 +18,16 @@ GET {{baseUrl}}/files/photos/sample.jpg
 
 ###
 
+### Get thumbnail (default 140px height)
+GET {{baseUrl}}/thumbnail/photos/sample.jpg
+
+###
+
+### Get thumbnail with custom height
+GET {{baseUrl}}/thumbnail/photos/sample.jpg?height=200
+
+###
+
 ### Upload a file (requires API key)
 POST {{baseUrl}}/files?folder=photos
 X-API-Key: {{apiKey}}

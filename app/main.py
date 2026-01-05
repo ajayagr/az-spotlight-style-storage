@@ -197,6 +197,117 @@ def get_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/thumbnail/{filename:path}", tags=["Files"])
+def get_thumbnail(
+    filename: str,
+    height: int = Query(default=140, ge=10, le=500, description="Thumbnail height in pixels"),
+    if_none_match: str = Header(None, alias="If-None-Match")
+):
+    """
+    Generate and return a thumbnail for an image file.
+    
+    Preserves aspect ratio based on the specified height (default 140px).
+    Supports HTTP caching with ETag headers.
+    Only works with image files (.png, .jpg, .jpeg, .gif, .bmp, .webp).
+    """
+    import hashlib
+    from io import BytesIO
+    
+    try:
+        from PIL import Image
+    except ImportError:
+        raise HTTPException(
+            status_code=500, 
+            detail="Pillow library not installed. Run: pip install Pillow"
+        )
+    
+    # Validate it's an image file
+    is_image = filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))
+    if not is_image:
+        raise HTTPException(status_code=400, detail="Thumbnails only available for image files")
+    
+    try:
+        file_content = storage.get_file(filename)
+        if file_content is None:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Generate ETag from content + height for cache validation
+        content_hash = hashlib.md5(file_content + str(height).encode()).hexdigest()
+        etag_quoted = f'"{content_hash}"'
+        
+        # Check if browser has cached version
+        if if_none_match and (if_none_match == etag_quoted or if_none_match == content_hash):
+            return Response(status_code=304, headers={
+                "Cache-Control": "public, max-age=604800, immutable",  # 7 days for thumbnails
+                "ETag": etag_quoted
+            })
+        
+        # Open image and create thumbnail
+        img = Image.open(BytesIO(file_content))
+        
+        # Handle RGBA/transparency for formats that support it
+        original_format = img.format or 'JPEG'
+        
+        # Calculate new dimensions preserving aspect ratio
+        original_width, original_height = img.size
+        aspect_ratio = original_width / original_height
+        new_height = height
+        new_width = int(new_height * aspect_ratio)
+        
+        # Use high-quality resampling
+        img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        # Determine output format
+        output_format = original_format
+        media_type = "image/jpeg"
+        
+        if original_format.upper() in ('PNG', 'GIF', 'WEBP'):
+            output_format = original_format.upper()
+            media_type = f"image/{output_format.lower()}"
+        else:
+            # Convert to RGB for JPEG output (handles RGBA)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            output_format = 'JPEG'
+            media_type = "image/jpeg"
+        
+        # Save thumbnail to bytes
+        output = BytesIO()
+        save_kwargs = {'format': output_format}
+        if output_format == 'JPEG':
+            save_kwargs['quality'] = 85
+            save_kwargs['optimize'] = True
+        elif output_format == 'PNG':
+            save_kwargs['optimize'] = True
+        elif output_format == 'WEBP':
+            save_kwargs['quality'] = 85
+        
+        img.save(output, **save_kwargs)
+        thumbnail_bytes = output.getvalue()
+        
+        return Response(
+            content=thumbnail_bytes,
+            media_type=media_type,
+            headers={
+                "Cache-Control": "public, max-age=604800, immutable",  # 7 days
+                "ETag": etag_quoted
+            }
+        )
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Thumbnail generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate thumbnail: {str(e)}")
+
+
 @app.post("/files")
 async def upload_file(
     file: UploadFile = File(...), 

@@ -1,0 +1,31 @@
+meta {
+  name: Get Thumbnail
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{host}}/thumbnail/photos/sample.jpg?height=140
+  body: none
+  auth: none
+}
+
+params:query {
+  height: 140
+}
+
+docs {
+  Generate and return a thumbnail for an image file.
+  
+  Preserves aspect ratio based on the specified height (default 140px).
+  Supports HTTP caching with ETag headers (7 days cache).
+  
+  Query Parameters:
+  - height: Thumbnail height in pixels (10-500, default: 140)
+  
+  Supported formats: .png, .jpg, .jpeg, .gif, .bmp, .webp
+  
+  Response includes cache headers:
+  - Cache-Control: public, max-age=604800, immutable
+  - ETag for cache validation
+}

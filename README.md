@@ -232,7 +232,42 @@ curl "http://localhost:8000/files/documents/report.pdf" \
 
 ---
 
-### 4. Delete a File
+### 4. Get Thumbnail
+
+```http
+GET /thumbnail/{filename}
+```
+
+Generate and return a thumbnail for an image file. Preserves aspect ratio based on the specified height.
+
+**Authentication**: Not required
+
+**Parameters**:
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `filename` | string | path | Full path to the image file |
+| `height` | integer | query | Thumbnail height in pixels (10-500, default: 140) |
+
+**Example**:
+```bash
+# Default height (140px)
+curl "http://localhost:8000/thumbnail/images/photo.jpg" --output thumb.jpg
+
+# Custom height (200px)
+curl "http://localhost:8000/thumbnail/images/photo.jpg?height=200" --output thumb.jpg
+```
+
+**Response**: Thumbnail image with preserved aspect ratio
+
+**Headers**:
+- `Cache-Control: public, max-age=604800, immutable` (7 days)
+- `ETag` for cache validation
+
+**Supported Formats**: `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`
+
+---
+
+### 5. Delete a File
 
 ```http
 DELETE /files/{filename}
