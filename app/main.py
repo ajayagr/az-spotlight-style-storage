@@ -407,6 +407,115 @@ def get_next_image(
     }
 
 
+@app.get("/images/variations/{image_id}", tags=["Images"])
+def get_image_variations(image_id: str):
+    """
+    Get all styled and moment variations available for a source image.
+    
+    Accepts image name without extension (e.g., "photo1" instead of "photo1.jpg").
+    Returns only variations that exist, with compact output (style_name + file_path).
+    """
+    # Get all files from storage
+    all_files = set(storage.list_files())  # Use set for O(1) lookup
+    
+    # Build paths to check
+    source_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
+    styled_folder = STYLE_SYNC_DEFAULT_TARGET.strip("/")
+    moments_folder = MOMENT_SYNC_DEFAULT_OUTPUT.strip("/")
+    
+    # Find the source image by name (without extension)
+    # Look for first matching file in source folder
+    source_prefix = f"{source_folder}/" if source_folder else ""
+    source_path = None
+    image_name = None
+    
+    for file_path in sorted(all_files):  # Sort for consistent results
+        if file_path.startswith(source_prefix):
+            # Get filename without the source folder prefix
+            filename = file_path[len(source_prefix):] if source_prefix else file_path
+            # Skip files in subfolders
+            if "/" in filename:
+                continue
+            # Check if filename (without extension) matches image_id
+            name_without_ext = Path(filename).stem
+            if name_without_ext == image_id:
+                source_path = file_path
+                image_name = filename
+                break
+    
+    if not source_path:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Source image not found with name: {image_id}"
+        )
+    
+    # Load styles configuration
+    styles = load_styles_from_file()
+    
+    # Load moments configuration if available
+    try:
+        moments_config = load_moments_from_file()
+        has_moments = True
+    except FileNotFoundError:
+        moments_config = None
+        has_moments = False
+    
+    # Build styled variations - only include existing files
+    styled_variations = []
+    for style in styles:
+        style_folder_name = style.get("folder_name", style["name"].lower().replace(" ", "_"))
+        styled_path = f"{styled_folder}/{style_folder_name}/{image_name}" if styled_folder else f"{style_folder_name}/{image_name}"
+        
+        if styled_path in all_files:
+            styled_variations.append({
+                "style": style["name"],
+                "path": styled_path
+            })
+    
+    # Build moment variations - only include existing files
+    moment_variations = []
+    if has_moments and moments_config:
+        times = moments_config.get("times_of_day", [])
+        seasons = moments_config.get("seasons", [])
+        
+        # Build all moment folder combinations
+        moment_folders = []
+        for t in times:
+            moment_folders.append({"name": t["name"], "folder": t["folder_name"]})
+        for s in seasons:
+            moment_folders.append({"name": s["name"], "folder": s["folder_name"]})
+        for t in times:
+            for s in seasons:
+                moment_folders.append({
+                    "name": f"{t['name']} + {s['name']}",
+                    "folder": f"{t['folder_name']}_{s['folder_name']}"
+                })
+        
+        # Check each style's moment variations
+        for style in styles:
+            style_folder_name = style.get("folder_name", style["name"].lower().replace(" ", "_"))
+            
+            for moment in moment_folders:
+                moment_path = f"{moments_folder}/{style_folder_name}/{moment['folder']}/{image_name}" if moments_folder else f"{style_folder_name}/{moment['folder']}/{image_name}"
+                
+                if moment_path in all_files:
+                    moment_variations.append({
+                        "style": style["name"],
+                        "moment": moment["name"],
+                        "path": moment_path
+                    })
+    
+    return {
+        "image_id": image_id,
+        "image_file": image_name,
+        "source_path": source_path,
+        "styled_count": len(styled_variations),
+        "moment_count": len(moment_variations),
+        "styled": styled_variations,
+        "moments": moment_variations
+    }
+
+
 @app.delete("/files/{filename:path}")
 def delete_file(
     filename: str, 

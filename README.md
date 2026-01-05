@@ -454,6 +454,81 @@ curl "http://localhost:8000/images/next?style=Geometric3D&id=photo1.jpg"
 
 ---
 
+### 4. Get Image Variations
+
+```http
+GET /images/variations/{image_id}
+```
+
+Get all styled and moment variations available for a source image. Returns a comprehensive view of all transformations.
+
+**Authentication**: Not required
+
+**Parameters**:
+| Parameter | Type | Location | Description |
+|-----------|------|----------|---------|
+| `image_id` | string | path | The source image name **without extension** (e.g., "photo1") (required) |
+
+**Example**:
+```bash
+curl "http://localhost:8000/images/variations/photo1"
+```
+
+**Response** (200):
+```json
+{
+  "image_id": "photo1",
+  "image_file": "photo1.jpg",
+  "source_path": "originals/photo1.jpg",
+  "styled_count": 8,
+  "moment_count": 192,
+  "styled": [
+    {
+      "style": "Geometric 3D",
+      "path": "styled/geometric_3d/photo1.jpg"
+    },
+    {
+      "style": "Anime",
+      "path": "styled/anime/photo1.jpg"
+    }
+  ],
+  "moments": [
+    {
+      "style": "Geometric 3D",
+      "moment": "Morning",
+      "path": "moments/geometric_3d/morning/photo1.jpg"
+    },
+    {
+      "style": "Geometric 3D",
+      "moment": "Morning + Summer",
+      "path": "moments/geometric_3d/morning_summer/photo1.jpg"
+    }
+  ]
+}
+```
+
+**Response Fields**:
+| Field | Type | Description |
+|-------|------|-------------|
+| `image_id` | string | The image name (without extension) |
+| `image_file` | string | The full filename with extension |
+| `source_path` | string | Full path to the source image |
+| `styled_count` | number | Number of existing styled variations |
+| `moment_count` | number | Number of existing moment variations |
+| `styled` | array | Array of existing styled variations (style + path) |
+| `moments` | array | Array of existing moment variations (style + moment + path) |
+
+> **Note**: Only variations that exist are included in the response.
+
+**Error Response** (404):
+```json
+{
+  "detail": "Source image not found: originals/photo1.jpg"
+}
+```
+
+---
+
 ## ⚡ StyleSync APIs
 
 The integrated StyleSync service provides AI-powered image style transfer capabilities directly within the FastAPI application.

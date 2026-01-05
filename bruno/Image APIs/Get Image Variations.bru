@@ -1,0 +1,27 @@
+meta {
+  name: Get Image Variations
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}/images/variations/photo1
+  body: none
+  auth: none
+}
+
+docs {
+  Get all styled and moment variations available for a source image.
+  
+  Accepts image name WITHOUT extension (e.g., "photo1" not "photo1.jpg").
+  Returns only existing variations with compact output.
+  
+  Response includes:
+  - image_id: The image name (without extension)
+  - image_file: The full filename with extension
+  - source_path: Full path to the source image
+  - styled_count: Number of existing styled variations
+  - moment_count: Number of existing moment variations
+  - styled: Array of {style, path} for existing styled variations
+  - moments: Array of {style, moment, path} for existing moment variations
+}

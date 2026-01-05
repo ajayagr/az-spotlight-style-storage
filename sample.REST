@@ -84,6 +84,12 @@ GET {{baseUrl}}/images/next?style=Anime&id=photo1.jpg
 ### Get next random image (case-insensitive)
 GET {{baseUrl}}/images/next?style=neonart&id=photo2.jpg
 
+###
+
+### Get all variations for a source image (styled + moments)
+# Use image name WITHOUT extension (e.g., "photo1" not "photo1.jpg")
+GET {{baseUrl}}/images/variations/photo1
+
 ### ===========================================
 ### StyleSync APIs
 ### ===========================================
