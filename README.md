@@ -556,9 +556,23 @@ curl -X POST "http://localhost:8000/stylesync/async" \
 {
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "started",
-  "message": "StyleSync job started. Use GET /stylesync/status/{job_id} to check progress."
+  "message": "StyleSync job started. Use GET /stylesync/status/{job_id} to check progress.",
+  "total_expected": 30,
+  "to_generate": 25,
+  "to_skip": 5,
+  "to_delete": 2
 }
 ```
+
+**Response Fields**:
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | string | UUID of the background job |
+| `status` | string | Initial status ("started") |
+| `total_expected` | number | Total styled images expected |
+| `to_generate` | number | Number of images to be generated |
+| `to_skip` | number | Number of images that already exist |
+| `to_delete` | number | Number of orphaned images to delete |
 
 ---
 
@@ -585,15 +599,37 @@ curl "http://localhost:8000/stylesync/status/550e8400-e29b-41d4-a716-44665544000
 **Response**:
 ```json
 {
-  "status": "completed",
+  "status": "running",
   "source": "photos/",
   "output": "styled/",
-  "processed": ["photo1_1.jpg"],
+  "total_expected": 30,
+  "to_generate": 25,
+  "to_skip": 5,
+  "to_delete": 2,
+  "processed": ["watercolor/photo1.jpg", "oil_painting/photo1.jpg"],
   "failed": [],
-  "skipped": [],
-  "error": null
+  "skipped": ["watercolor/photo2.jpg"],
+  "deleted": [],
+  "error": null,
+  "created_at": "2024-01-05T10:30:00.000000"
 }
 ```
+
+**Response Fields**:
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Job status: "running", "completed", or "failed" |
+| `total_expected` | number | Total styled images expected |
+| `to_generate` | number | Number of images to be generated (initial prediction) |
+| `to_skip` | number | Number of images that already exist (initial prediction) |
+| `to_delete` | number | Number of orphaned images to delete |
+| `processed` | array | List of successfully processed image paths |
+| `failed` | array | List of failed image paths |
+| `skipped` | array | List of skipped image paths |
+| `deleted` | array | List of deleted orphan image paths |
+| `created_at` | string | ISO timestamp when job was created |
+
+**Progress Calculation**: Compare `processed.length + failed.length` against `to_generate` to calculate progress percentage.
 
 ---
 
@@ -768,9 +804,23 @@ Start a background MomentSync job. Returns immediately with a job ID.
   "status": "started",
   "message": "MomentSync job started in background",
   "styled_path": "styled/",
-  "output_path": "moments/"
+  "output_path": "moments/",
+  "total_expected": 240,
+  "to_generate": 200,
+  "to_skip": 40,
+  "to_delete": 0
 }
 ```
+
+**Response Fields**:
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | string | UUID of the background job |
+| `status` | string | Initial status ("started") |
+| `total_expected` | number | Total moment images expected |
+| `to_generate` | number | Number of images to be generated |
+| `to_skip` | number | Number of images that already exist |
+| `to_delete` | number | Number of orphaned images to delete |
 
 ---
 
@@ -787,15 +837,36 @@ Check the status of a background MomentSync job.
 **Response**:
 ```json
 {
-  "status": "completed",
+  "status": "running",
   "source": "styled/",
   "output": "moments/",
+  "total_expected": 240,
+  "to_generate": 200,
+  "to_skip": 40,
+  "to_delete": 0,
   "processed": ["geometric_3d/morning/image.jpg", "geometric_3d/summer/image.jpg"],
   "failed": [],
   "skipped": [],
-  "deleted": []
+  "deleted": [],
+  "created_at": "2024-01-05T10:30:00.000000"
 }
 ```
+
+**Response Fields**:
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Job status: "running", "completed", or "failed" |
+| `total_expected` | number | Total moment images expected |
+| `to_generate` | number | Number of images to be generated (initial prediction) |
+| `to_skip` | number | Number of images that already exist (initial prediction) |
+| `to_delete` | number | Number of orphaned images to delete |
+| `processed` | array | List of successfully processed image paths |
+| `failed` | array | List of failed image paths |
+| `skipped` | array | List of skipped image paths |
+| `deleted` | array | List of deleted orphan image paths |
+| `created_at` | string | ISO timestamp when job was created |
+
+**Progress Calculation**: Compare `processed.length + failed.length` against `to_generate` to calculate progress percentage.
 
 ---
 

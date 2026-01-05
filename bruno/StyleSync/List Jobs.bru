@@ -1,0 +1,30 @@
+meta {
+  name: List StyleSync Jobs
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{host}}/stylesync/jobs
+  body: none
+  auth: none
+}
+
+docs {
+  List all active StyleSync jobs.
+  
+  Response includes:
+  - count: Number of active jobs
+  - jobs: Array of job summaries with:
+    - job_id: UUID of the job
+    - status: Current status
+    - source: Source path
+    - output: Output path
+    - total_expected: Total expected images
+    - to_generate: Images to generate
+    - processed_count: Number processed so far
+    - failed_count: Number failed so far
+    - created_at: ISO timestamp when job started
+  
+  Note: Jobs are stored in-memory and may be lost on server restart.
+}

@@ -639,7 +639,12 @@ async function pollMomentSyncStatus(jobId) {
             
             if (result.status === 'running') {
                 const processed = result.processed?.length || 0;
-                elements.bannerStatus.textContent = `Processing... (${processed} completed)`;
+                const failed = result.failed?.length || 0;
+                const toGenerate = result.to_generate || 0;
+                const completed = processed + failed;
+                const progressPercent = toGenerate > 0 ? Math.round((completed / toGenerate) * 100) : 0;
+                
+                elements.bannerStatus.textContent = `Processing... ${progressPercent}% (${completed}/${toGenerate})`;
                 setTimeout(poll, 10000); // Poll every 10 seconds
             } else {
                 // Job completed
@@ -910,16 +915,19 @@ async function pollStyleSyncStatus(jobId, maxAttempts = 60) {
     const poll = async () => {
         try {
             attempts++;
-            updateStyleSyncBanner(`Checking status... (${attempts * 10}s)`);
             
             const response = await fetch(`/stylesync/status/${jobId}`);
             
             if (response.ok) {
                 const result = await response.json();
                 const processedCount = result.processed?.length ?? 0;
+                const failedCount = result.failed?.length ?? 0;
+                const toGenerate = result.to_generate ?? 0;
+                const completed = processedCount + failedCount;
+                const progressPercent = toGenerate > 0 ? Math.round((completed / toGenerate) * 100) : 0;
                 
                 if (result.status === 'running') {
-                    updateStyleSyncBanner(`Processing... ${processedCount} images styled`);
+                    updateStyleSyncBanner(`Processing... ${progressPercent}% (${completed}/${toGenerate})`);
                 }
                 
                 if (result.status === 'completed' || result.status === 'failed') {

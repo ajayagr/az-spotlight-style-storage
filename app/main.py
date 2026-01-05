@@ -476,6 +476,7 @@ class StyleSyncResponse(BaseModel):
     skipped: List[str] = []
     deleted: List[str] = []  # Orphaned files that were deleted
     error: Optional[str] = None
+    created_at: Optional[str] = None  # ISO timestamp when job was created
 
 
 # Store for tracking background sync jobs
@@ -597,6 +598,7 @@ async def run_stylesync_async(
     to_delete = len(orphaned_files)
     
     # Initialize job status with counts
+    from datetime import datetime
     sync_jobs[job_id] = {
         "status": "running",
         "source": source_path,
@@ -609,7 +611,8 @@ async def run_stylesync_async(
         "failed": [],
         "skipped": [],
         "deleted": [],
-        "error": None
+        "error": None,
+        "created_at": datetime.utcnow().isoformat()
     }
     
     def run_sync_job():
@@ -653,7 +656,10 @@ def get_stylesync_status(job_id: str):
     Returns the current status and results of a background sync operation.
     """
     if job_id not in sync_jobs:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Job not found: {job_id}. Jobs are stored in-memory and may be lost if the server restarts. Active jobs: {len(sync_jobs)}"
+        )
     
     job = sync_jobs[job_id]
     return StyleSyncResponse(
@@ -668,7 +674,8 @@ def get_stylesync_status(job_id: str):
         failed=job["failed"],
         skipped=job["skipped"],
         deleted=job.get("deleted", []),
-        error=job["error"]
+        error=job["error"],
+        created_at=job.get("created_at")
     )
 
 
@@ -686,6 +693,32 @@ def list_styleable_images(
         "source_path": source_path,
         "count": len(images),
         "images": images
+    }
+
+
+@app.get("/stylesync/jobs", tags=["StyleSync"])
+def list_stylesync_jobs():
+    """
+    List all active StyleSync jobs.
+    
+    Jobs are stored in-memory and will be lost on server restart.
+    """
+    jobs = []
+    for job_id, job in sync_jobs.items():
+        jobs.append({
+            "job_id": job_id,
+            "status": job["status"],
+            "source": job["source"],
+            "output": job["output"],
+            "total_expected": job.get("total_expected", 0),
+            "to_generate": job.get("to_generate", 0),
+            "processed_count": len(job.get("processed", [])),
+            "failed_count": len(job.get("failed", [])),
+            "created_at": job.get("created_at")
+        })
+    return {
+        "count": len(jobs),
+        "jobs": jobs
     }
 
 
@@ -773,6 +806,7 @@ class MomentSyncResponse(BaseModel):
     skipped: List[str] = []
     deleted: List[str] = []
     error: Optional[str] = None
+    created_at: Optional[str] = None  # ISO timestamp when job was created
 
 
 # Store for tracking background moment sync jobs
@@ -896,6 +930,7 @@ async def run_momentsync_async(
     to_delete = len(orphaned_files)
     
     # Initialize job status with counts
+    from datetime import datetime
     moment_sync_jobs[job_id] = {
         "status": "running",
         "source": styled_path,
@@ -908,7 +943,8 @@ async def run_momentsync_async(
         "failed": [],
         "skipped": [],
         "deleted": [],
-        "error": None
+        "error": None,
+        "created_at": datetime.utcnow().isoformat()
     }
     
     def run_moment_sync_background():
@@ -956,7 +992,10 @@ def get_momentsync_status(job_id: str):
     Returns the current status and results of the specified job.
     """
     if job_id not in moment_sync_jobs:
-        raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Job not found: {job_id}. Jobs are stored in-memory and may be lost if the server restarts. Active jobs: {len(moment_sync_jobs)}"
+        )
     
     job = moment_sync_jobs[job_id]
     return MomentSyncResponse(
@@ -971,8 +1010,35 @@ def get_momentsync_status(job_id: str):
         failed=job.get("failed", []),
         skipped=job.get("skipped", []),
         deleted=job.get("deleted", []),
-        error=job["error"]
+        error=job["error"],
+        created_at=job.get("created_at")
     )
+
+
+@app.get("/momentsync/jobs", tags=["MomentSync"])
+def list_momentsync_jobs():
+    """
+    List all active MomentSync jobs.
+    
+    Jobs are stored in-memory and will be lost on server restart.
+    """
+    jobs = []
+    for job_id, job in moment_sync_jobs.items():
+        jobs.append({
+            "job_id": job_id,
+            "status": job["status"],
+            "source": job["source"],
+            "output": job["output"],
+            "total_expected": job.get("total_expected", 0),
+            "to_generate": job.get("to_generate", 0),
+            "processed_count": len(job.get("processed", [])),
+            "failed_count": len(job.get("failed", [])),
+            "created_at": job.get("created_at")
+        })
+    return {
+        "count": len(jobs),
+        "jobs": jobs
+    }
 
 
 @app.get("/momentsync/moments", tags=["MomentSync"])

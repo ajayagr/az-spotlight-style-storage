@@ -101,6 +101,7 @@ Content-Type: application/json
 ###
 
 ### Run StyleSync (async/background)
+# Returns job_id, total_expected, to_generate, to_skip, to_delete
 POST {{baseUrl}}/stylesync/async
 X-API-Key: {{apiKey}}
 Content-Type: application/json
@@ -113,7 +114,14 @@ Content-Type: application/json
 ###
 
 ### Get StyleSync job status
+# Returns progress info: processed[], failed[], to_generate (initial count)
+# Progress = (processed.length + failed.length) / to_generate * 100
 GET {{baseUrl}}/stylesync/status/550e8400-e29b-41d4-a716-446655440000
+
+###
+
+### List all active StyleSync jobs
+GET {{baseUrl}}/stylesync/jobs
 
 ###
 
@@ -129,3 +137,36 @@ GET {{baseUrl}}/stylesync/styles
 
 ### List AI providers
 GET {{baseUrl}}/stylesync/providers
+
+### ===========================================
+### MomentSync APIs
+### ===========================================
+
+### Run MomentSync (async/background)
+# Returns job_id, total_expected, to_generate, to_skip, to_delete
+POST {{baseUrl}}/momentsync/async
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+    "styled_path": "styled/",
+    "output_path": "moments/",
+    "style_folders": []
+}
+
+###
+
+### Get MomentSync job status
+# Returns progress info: processed[], failed[], to_generate (initial count)
+# Progress = (processed.length + failed.length) / to_generate * 100
+GET {{baseUrl}}/momentsync/status/550e8400-e29b-41d4-a716-446655440000
+
+###
+
+### List all active MomentSync jobs
+GET {{baseUrl}}/momentsync/jobs
+
+###
+
+### Get configured moments
+GET {{baseUrl}}/momentsync/moments

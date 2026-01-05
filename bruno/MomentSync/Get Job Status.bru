@@ -1,22 +1,22 @@
 meta {
-  name: Get Job Status
+  name: Get MomentSync Job Status
   type: http
-  seq: 3
+  seq: 2
 }
 
 get {
-  url: {{host}}/stylesync/status/550e8400-e29b-41d4-a716-446655440000
+  url: {{host}}/momentsync/status/550e8400-e29b-41d4-a716-446655440000
   body: none
   auth: none
 }
 
 docs {
-  Check the status of a background StyleSync job.
-  Replace the job_id in the URL with the actual job ID returned from /stylesync/async.
+  Check the status of a background MomentSync job.
+  Replace the job_id in the URL with the actual job ID returned from /momentsync/async.
   
   Response includes:
   - status: "running", "completed", or "failed"
-  - total_expected: Total styled images expected
+  - total_expected: Total moment images expected
   - to_generate: Number of images to generate (initial prediction)
   - to_skip: Number of images already existing (initial prediction)
   - to_delete: Number of orphaned images to delete

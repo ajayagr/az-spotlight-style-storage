@@ -1,0 +1,21 @@
+meta {
+  name: Get Configured Moments
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{host}}/momentsync/moments
+  body: none
+  auth: none
+}
+
+docs {
+  Get the list of moment configurations from moments.json.
+  
+  Response includes:
+  - times_of_day: Array of time-based moments (morning, afternoon, evening, night)
+  - seasons: Array of season-based moments (summer, winter, rain, spring)
+  - composites: Array of combined time+season moments (16 total)
+  - total_variations: Total number of variations per styled image (24)
+}
