@@ -141,11 +141,15 @@ def read_root(request: Request):
 def get_file(
     filename: str, 
     api_key_query: str = Query(None, alias="api_key"),
-    api_key_header: str = Header(None, alias="X-API-Key")
+    api_key_header: str = Header(None, alias="X-API-Key"),
+    if_none_match: str = Header(None, alias="If-None-Match")
 ):
     """
     Retrieve a file. Public for Images. Protected for others.
+    Supports HTTP caching with ETag for images.
     """
+    import hashlib
+    
     try:
         # 1. Check if public image
         is_image = filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))
@@ -167,8 +171,27 @@ def get_file(
         media_type, _ = mimetypes.guess_type(filename)
         if not media_type:
             media_type = "application/octet-stream"
+        
+        # Set cache headers for images (1 day cache, revalidate)
+        headers = {}
+        if is_image:
+            # Generate ETag from content hash for cache validation
+            etag = hashlib.md5(file_content).hexdigest()
+            etag_quoted = f'"{etag}"'
             
-        return Response(content=file_content, media_type=media_type)
+            # Check if browser has cached version (If-None-Match)
+            if if_none_match and (if_none_match == etag_quoted or if_none_match == etag):
+                return Response(status_code=304, headers={
+                    "Cache-Control": "public, max-age=86400, must-revalidate",
+                    "ETag": etag_quoted
+                })
+            
+            headers = {
+                "Cache-Control": "public, max-age=86400, must-revalidate",  # 1 day
+                "ETag": etag_quoted
+            }
+            
+        return Response(content=file_content, media_type=media_type, headers=headers)
     except HTTPException as he:
         raise he
     except Exception as e:
