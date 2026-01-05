@@ -413,9 +413,9 @@ function createFileCard(filePath, fileName, folder) {
     const ext = getFileExtension(filePath);
     const iconInfo = FILE_ICONS[ext] ?? FILE_ICONS.default;
     
-    // Use thumbnail endpoint for images to save memory
+    // Use full image path
     const thumbContent = isImage
-        ? `<img src="/thumbnail/${filePath}" class="thumb-img" alt="${fileName}" loading="lazy">`
+        ? `<img src="/files/${filePath}" class="thumb-img" alt="${fileName}" loading="lazy">`
         : `<i class="fas ${iconInfo.class} file-icon" style="color: ${iconInfo.color};"></i>`;
     
     const folderBadge = folder 
