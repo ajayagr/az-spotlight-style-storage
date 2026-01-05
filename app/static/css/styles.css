@@ -35,7 +35,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1100px;
+    max-width: 1400px;
 }
 
 /* Header */
@@ -121,7 +121,7 @@ input:checked + .slider::before {
     box-shadow: var(--shadow-sm);
     margin-bottom: 30px;
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: center;
     flex-wrap: wrap;
     border: 1px solid var(--border-color);
@@ -131,7 +131,7 @@ input:checked + .slider::before {
     padding: 10px 14px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    width: 220px;
+    width: 180px;
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
