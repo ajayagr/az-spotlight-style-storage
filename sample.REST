@@ -86,6 +86,31 @@ GET {{baseUrl}}/images/styled?style=NonExistentStyle&id=photo1.jpg
 
 ###
 
+### Get moment variation of styled image (time only)
+GET {{baseUrl}}/images/styled?style=Geometric3D&id=photo1.jpg&time=morning
+
+###
+
+### Get moment variation of styled image (season only)
+GET {{baseUrl}}/images/styled?style=Geometric3D&id=photo1.jpg&season=winter
+
+###
+
+### Get moment variation of styled image (time + season composite)
+GET {{baseUrl}}/images/styled?style=Geometric3D&id=photo1.jpg&time=evening&season=summer
+
+###
+
+### Get moment variation of original image (no style, time + season)
+GET {{baseUrl}}/images/styled?id=photo1.jpg&time=morning&season=rain
+
+###
+
+### Get random moment variation of original image
+GET {{baseUrl}}/images/styled?id=-1&time=night&season=winter
+
+###
+
 ### Get next random image (excluding current)
 GET {{baseUrl}}/images/next?style=Anime&id=photo1.jpg
 
@@ -160,6 +185,8 @@ GET {{baseUrl}}/stylesync/providers
 
 ### Run MomentSync (async/background)
 # Returns job_id, total_expected, to_generate, to_skip, to_delete
+# Processes all style folders including 'original' (non-styled source images)
+# Outputs: moments/original/{moment}/ and moments/{style}/{moment}/
 POST {{baseUrl}}/momentsync/async
 X-API-Key: {{apiKey}}
 Content-Type: application/json

@@ -13,15 +13,24 @@ get {
 params:query {
   style: Geometric3D
   id: photo1.jpg
+  ~time: morning
+  ~season: summer
 }
 
 docs {
-  Get the path for a styled version of an image.
+  Get the path for a styled version of an image, optionally with moment-in-time variations.
   
   Parameters:
-  - style: Style name (case-insensitive, e.g., "Geometric3D", "geometric3d")
-  - id: Filename to look up, or -1 for a random image from the style folder
+  - style: Style name (case-insensitive, e.g., "Geometric3D"). Optional if time/season provided.
+  - id: Filename to look up, or -1 for a random image from the target folder
+  - time: (optional) Time of day - morning, afternoon, evening, night (case-insensitive)
+  - season: (optional) Season - summer, winter, rain, spring (case-insensitive)
   
-  Returns the file path, folder, and icon for the styled image.
+  Behavior:
+  - style only: Returns styled image from styled/{style}/
+  - style + time/season: Returns moment variation from moments/{style}/{moment}/
+  - time/season only (no style): Returns moment variation of original from moments/original/{moment}/
+  
+  Returns the file path, folder, and icon for the image.
   Falls back to original folder if style not found.
 }

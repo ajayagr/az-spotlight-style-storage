@@ -378,36 +378,94 @@ def get_random_images(count: int = Query(default=4, ge=1, le=20, description="Nu
 
 @app.get("/images/styled", tags=["Images"])
 def get_styled_file(
-    style: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),
-    id: str = Query(..., description="The image filename to look up. Use '-1' to get a random image.")
+    style: Optional[str] = Query(default=None, description="The style name (e.g., 'Geometric 3D'). If not provided with time/season, returns original moment variation."),
+    id: str = Query(..., description="The image filename to look up. Use '-1' to get a random image."),
+    time: Optional[str] = Query(default=None, description="Time of day for moment variation (e.g., 'morning', 'evening'). Case-insensitive."),
+    season: Optional[str] = Query(default=None, description="Season for moment variation (e.g., 'summer', 'winter'). Case-insensitive.")
 ):
     """
     Get a styled file path and icon path by style name and filename.
-    If id is '-1', returns a random image from the style folder.
-    If style is not found, returns the original image.
+    
+    If time and/or season are provided, returns a moment-in-time variation.
+    - With style + time/season: Returns moment variation of styled image
+    - With only time/season (no style): Returns moment variation of original image
+    
+    If id is '-1', returns a random image from the target folder.
+    If style is not found, returns the original image (or its moment variation).
     Returns 404 if no matching file exists.
     """
     # Load styles to validate style and get folder_name (case-insensitive)
     styles = load_styles_from_file()
-    style_config = find_style_by_name(styles, style)
+    style_config = find_style_by_name(styles, style) if style else None
     
     # Get icon from style config (empty if style not found)
     icon_name = style_config.get("icon", "") if style_config else ""
     icon_folder = STYLE_SYNC_ICON_FOLDER.strip("/")
     icon_path = f"{icon_folder}/{icon_name}" if icon_folder and icon_name else icon_name
     
-    # Determine the target folder based on whether style exists
+    # Determine the style folder based on whether style exists
     if style_config:
         # Get the folder_name from the style config
         style_folder = style_config.get("folder_name")
         if not style_folder:
             # Fallback: sanitize the style name
             style_folder = style.lower().replace(" ", "_")
+    else:
+        # Style not found or not provided - use original folder
+        style_folder = "original"
+    
+    # Determine moment folder if time/season provided
+    moment_folder = None
+    time_config = None
+    season_config = None
+    
+    if time or season:
+        # Load moments config to validate time/season
+        try:
+            moments_config = load_moments_from_file()
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="Moments configuration file not found")
+        
+        # Find matching time (case-insensitive)
+        if time:
+            time_lower = time.lower().strip()
+            for t in moments_config.get("times_of_day", []):
+                if t["name"].lower() == time_lower or t.get("folder_name", "").lower() == time_lower:
+                    time_config = t
+                    break
+            if not time_config:
+                raise HTTPException(status_code=400, detail=f"Invalid time of day: {time}. Valid options: morning, afternoon, evening, night")
+        
+        # Find matching season (case-insensitive)
+        if season:
+            season_lower = season.lower().strip()
+            for s in moments_config.get("seasons", []):
+                if s["name"].lower() == season_lower or s.get("folder_name", "").lower() == season_lower:
+                    season_config = s
+                    break
+            if not season_config:
+                raise HTTPException(status_code=400, detail=f"Invalid season: {season}. Valid options: summer, winter, rain, spring")
+        
+        # Build moment folder name
+        if time_config and season_config:
+            # Composite: time_season
+            moment_folder = f"{time_config['folder_name']}_{season_config['folder_name']}"
+        elif time_config:
+            moment_folder = time_config["folder_name"]
+        else:
+            moment_folder = season_config["folder_name"]
+    
+    # Build target folder path
+    if moment_folder:
+        # Moment variation: moments/{style_folder}/{moment_folder}/
+        moments_base = MOMENT_SYNC_DEFAULT_OUTPUT.strip("/")
+        target_folder = f"{moments_base}/{style_folder}/{moment_folder}"
+    elif style_config:
+        # Styled image: styled/{style_folder}/
         output_base = STYLE_SYNC_DEFAULT_TARGET.strip("/")
         target_folder = f"{output_base}/{style_folder}" if output_base else style_folder
     else:
-        # Style not found - use original/source folder
-        style_folder = "original"
+        # Original source image: source/
         target_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
     
     # Handle random file selection when id is "-1"
@@ -438,9 +496,9 @@ def get_styled_file(
         # Check if the file exists in storage
         file_content = storage.get_file(styled_file_path)
         if file_content is None:
-            raise HTTPException(status_code=404, detail=f"Styled file not found: {styled_file_path}")
+            raise HTTPException(status_code=404, detail=f"File not found: {styled_file_path}")
     
-    return {
+    response = {
         "style": style if style_config else "original",
         "style_folder": style_folder,
         "file_path": styled_file_path,
@@ -448,6 +506,14 @@ def get_styled_file(
         "icon_path": icon_path,
         "icon_name": icon_name
     }
+    
+    # Add moment info if applicable
+    if moment_folder:
+        response["moment_folder"] = moment_folder
+        response["time"] = time_config["name"] if time_config else None
+        response["season"] = season_config["name"] if season_config else None
+    
+    return response
 
 
 @app.get("/images/next", tags=["Images"])
@@ -1006,7 +1072,7 @@ class MomentSyncRequest(BaseModel):
     )
     style_folders: Optional[List[str]] = Field(
         default=None,
-        description="Specific style folders to process. If empty, processes all style folders."
+        description="Specific style folders to process. If empty, processes all style folders including 'original'."
     )
 
 
@@ -1121,7 +1187,7 @@ async def run_momentsync_async(
     output_path = request.output_path if request.output_path is not None else MOMENT_SYNC_DEFAULT_OUTPUT
     
     # Calculate expected counts before starting the job
-    # Get style folders to process
+    # Get style folders to process (including 'original' folder)
     all_files = momentsync_service.storage.list_files()
     available_style_folders = set()
     normalized_styled = styled_path.strip("/")
@@ -1129,7 +1195,7 @@ async def run_momentsync_async(
         if f.startswith(normalized_styled + "/"):
             rel = f[len(normalized_styled) + 1:]
             parts = rel.split("/")
-            if len(parts) >= 2 and parts[0] != "original":
+            if len(parts) >= 2:
                 available_style_folders.add(parts[0])
     
     style_folders_to_process = request.style_folders if request.style_folders else list(available_style_folders)

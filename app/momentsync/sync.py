@@ -134,11 +134,11 @@ class MomentSyncService:
     
     def get_styled_images(self, styled_path: str, style_folders: List[str]) -> List[Dict[str, str]]:
         """
-        Get list of styled images to process.
+        Get list of styled images to process, including 'original' folder.
         
         Args:
             styled_path: Base path for styled images (e.g., 'styled/')
-            style_folders: List of style folder names to process
+            style_folders: List of style folder names to process (includes 'original')
             
         Returns:
             List of dicts with 'name', 'path', and 'style_folder' keys
@@ -162,11 +162,7 @@ class MomentSyncService:
             
             style_folder = parts[0]
             
-            # Skip 'original' folder and moment output folder
-            if style_folder == "original":
-                continue
-            
-            # Only process from specified style folders
+            # Only process from specified style folders (or all if not specified)
             if style_folders and style_folder not in style_folders:
                 continue
             
@@ -343,7 +339,7 @@ class MomentSyncService:
             styled_path: Path containing styled images (e.g., 'styled/')
             output_path: Output path for moment variations (e.g., 'moments/')
             moments_config: Parsed moments.json configuration
-            style_folders: Optional list of specific style folders to process
+            style_folders: Optional list of specific style folders to process (includes 'original' by default)
             provider: AI provider (currently only 'azure' is supported)
             
         Returns:
@@ -377,7 +373,7 @@ class MomentSyncService:
             return result
         
         try:
-            # Get styled images from all style folders if not specified
+            # Get styled images from all style folders if not specified (including 'original')
             if not style_folders:
                 # Auto-detect style folders from styled path
                 all_files = self.storage.list_files()
@@ -387,7 +383,7 @@ class MomentSyncService:
                     if f.startswith(normalized_path + "/"):
                         relative = f[len(normalized_path) + 1:]
                         parts = relative.split("/")
-                        if len(parts) >= 2 and parts[0] != "original":
+                        if len(parts) >= 2:
                             detected_folders.add(parts[0])
                 style_folders = list(detected_folders)
             
@@ -398,7 +394,7 @@ class MomentSyncService:
             
             logger.info(f"Processing style folders: {style_folders}")
             
-            # Get styled images
+            # Get styled images (includes 'original' folder)
             styled_images = self.get_styled_images(styled_path, style_folders)
             
             if not styled_images:
@@ -406,7 +402,7 @@ class MomentSyncService:
                 result.error = "No styled images found to process"
                 return result
             
-            logger.info(f"Found {len(styled_images)} styled images to process")
+            logger.info(f"Found {len(styled_images)} images to process")
             
             # Map expected state
             expected_state = self.map_expected_state(styled_images, times, seasons, composites)

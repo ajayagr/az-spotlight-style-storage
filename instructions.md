@@ -289,6 +289,14 @@ StyleSync creates this folder structure:
 MomentSync creates this folder structure:
 ```
 <moments_output_path>/
+├── original/               # Moment variations from original source images
+│   ├── morning/            # Time of day
+│   │   └── image.jpg
+│   ├── summer/             # Season
+│   │   └── image.jpg
+│   ├── morning_summer/     # Composite (time + season)
+│   │   └── image.jpg
+│   └── ...                 # 24 moment folders
 ├── style_name_1/           # Per-style moment variations
 │   ├── morning/            # Time of day
 │   │   └── image.jpg
@@ -300,6 +308,9 @@ MomentSync creates this folder structure:
 └── style_name_2/
     └── ...
 ```
+
+**Note**: MomentSync automatically includes the `styled/original/` folder (created by StyleSync) 
+to generate moment variations from original source images. These are stored in `moments/original/...`.
 
 ---
 

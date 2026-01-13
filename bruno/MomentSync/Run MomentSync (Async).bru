@@ -24,10 +24,20 @@ body:json {
 
 docs {
   Start MomentSync as a background job.
-  Creates time-of-day and season variations (24 per styled image).
+  Creates time-of-day and season variations (24 per image).
+  Processes all images in styled/ folder including styled/original/.
   Returns immediately with a job ID.
   Use GET /momentsync/status/{job_id} to check progress.
   Requires API key authentication.
+  
+  Parameters:
+  - styled_path: Path containing styled images (default: "styled/")
+  - output_path: Output path for moment variations (default: "moments/")
+  - style_folders: Specific style folders to process (empty = all, including 'original')
+  
+  Output structure:
+  - moments/original/{moment}/ - Variations from original source images
+  - moments/{style}/{moment}/ - Variations from styled images
   
   Response includes:
   - job_id: UUID to poll for status
