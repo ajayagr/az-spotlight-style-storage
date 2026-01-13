@@ -516,6 +516,115 @@ def get_styled_file(
     return response
 
 
+@app.get("/images/styled/file", tags=["Images"])
+def get_styled_image_file(
+    style: Optional[str] = Query(default=None, description="The style name (e.g., 'Geometric 3D'). If not provided with time/season, returns original moment variation."),
+    id: str = Query(..., description="The image filename to look up. Use '-1' to get a random image."),
+    time: Optional[str] = Query(default=None, description="Time of day for moment variation (e.g., 'morning', 'evening'). Case-insensitive."),
+    season: Optional[str] = Query(default=None, description="Season for moment variation (e.g., 'summer', 'winter'). Case-insensitive.")
+):
+    """
+    Get a styled image file directly (returns the image, not metadata).
+    
+    Same parameters as /images/styled but returns the actual image file.
+    
+    If time and/or season are provided, returns a moment-in-time variation.
+    - With style + time/season: Returns moment variation of styled image
+    - With only time/season (no style): Returns moment variation of original image
+    
+    If id is '-1', returns a random image from the target folder.
+    If style is not found, returns the original image (or its moment variation).
+    Returns 404 if no matching file exists.
+    """
+    # Load styles to validate style and get folder_name (case-insensitive)
+    styles = load_styles_from_file()
+    style_config = find_style_by_name(styles, style) if style else None
+    
+    # Determine the style folder based on whether style exists
+    if style_config:
+        style_folder = style_config.get("folder_name")
+        if not style_folder:
+            style_folder = style.lower().replace(" ", "_")
+    else:
+        style_folder = "original"
+    
+    # Determine moment folder if time/season provided
+    moment_folder = None
+    time_config = None
+    season_config = None
+    
+    if time or season:
+        try:
+            moments_config = load_moments_from_file()
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="Moments configuration file not found")
+        
+        if time:
+            time_lower = time.lower().strip()
+            for t in moments_config.get("times_of_day", []):
+                if t["name"].lower() == time_lower or t.get("folder_name", "").lower() == time_lower:
+                    time_config = t
+                    break
+            if not time_config:
+                raise HTTPException(status_code=400, detail=f"Invalid time of day: {time}. Valid options: morning, afternoon, evening, night")
+        
+        if season:
+            season_lower = season.lower().strip()
+            for s in moments_config.get("seasons", []):
+                if s["name"].lower() == season_lower or s.get("folder_name", "").lower() == season_lower:
+                    season_config = s
+                    break
+            if not season_config:
+                raise HTTPException(status_code=400, detail=f"Invalid season: {season}. Valid options: summer, winter, rain, spring")
+        
+        if time_config and season_config:
+            moment_folder = f"{time_config['folder_name']}_{season_config['folder_name']}"
+        elif time_config:
+            moment_folder = time_config["folder_name"]
+        else:
+            moment_folder = season_config["folder_name"]
+    
+    # Build target folder path
+    if moment_folder:
+        moments_base = MOMENT_SYNC_DEFAULT_OUTPUT.strip("/")
+        target_folder = f"{moments_base}/{style_folder}/{moment_folder}"
+    elif style_config:
+        output_base = STYLE_SYNC_DEFAULT_TARGET.strip("/")
+        target_folder = f"{output_base}/{style_folder}" if output_base else style_folder
+    else:
+        target_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
+    
+    # Handle random file selection when id is "-1"
+    if id == "-1":
+        all_files = storage.list_files()
+        folder_images = []
+        for file_path in all_files:
+            if target_folder:
+                if not file_path.startswith(target_folder + "/") and not file_path.startswith(target_folder):
+                    continue
+            ext = Path(file_path).suffix.lower()
+            if ext in VALID_IMAGE_EXTENSIONS:
+                folder_images.append(file_path)
+        
+        if not folder_images:
+            raise HTTPException(status_code=404, detail=f"No images found in folder: {target_folder or '(root)'}")
+        
+        styled_file_path = random.choice(folder_images)
+    else:
+        styled_file_path = f"{target_folder}/{id}" if target_folder else id
+    
+    # Get the file content
+    file_content = storage.get_file(styled_file_path)
+    if file_content is None:
+        raise HTTPException(status_code=404, detail=f"File not found: {styled_file_path}")
+    
+    # Determine content type
+    ext = Path(styled_file_path).suffix.lower()
+    content_type = mimetypes.guess_type(styled_file_path)[0] or "application/octet-stream"
+    
+    return Response(content=file_content, media_type=content_type)
+
+
 @app.get("/images/next", tags=["Images"])
 def get_next_image(
     style: str = Query(..., description="The style name (e.g., 'Geometric 3D')"),

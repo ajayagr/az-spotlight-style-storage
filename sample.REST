@@ -111,6 +111,25 @@ GET {{baseUrl}}/images/styled?id=-1&time=night&season=winter
 
 ###
 
+### ===========================================
+### Get Styled Image File (returns image directly)
+### ===========================================
+
+### Get random styled image file directly
+GET {{baseUrl}}/images/styled/file?style=Geometric3D&id=-1
+
+###
+
+### Get styled image file with moment variation
+GET {{baseUrl}}/images/styled/file?style=Geometric3D&id=-1&time=morning&season=summer
+
+###
+
+### Get original moment variation image file
+GET {{baseUrl}}/images/styled/file?id=-1&time=evening&season=rain
+
+###
+
 ### Get next random image (excluding current)
 GET {{baseUrl}}/images/next?style=Anime&id=photo1.jpg
 

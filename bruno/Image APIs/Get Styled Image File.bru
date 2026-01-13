@@ -1,0 +1,37 @@
+meta {
+  name: Get Styled Image File
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{host}}/images/styled/file
+  body: none
+  auth: none
+}
+
+params:query {
+  style: Geometric3D
+  id: -1
+  ~time: morning
+  ~season: summer
+}
+
+docs {
+  Get a styled image file directly (returns the image, not metadata).
+  
+  Same parameters as /images/styled but returns the actual image file.
+  
+  Parameters:
+  - style: Style name (case-insensitive, e.g., "Geometric3D"). Optional if time/season provided.
+  - id: Filename to look up, or -1 for a random image from the target folder
+  - time: (optional) Time of day - morning, afternoon, evening, night (case-insensitive)
+  - season: (optional) Season - summer, winter, rain, spring (case-insensitive)
+  
+  Behavior:
+  - style only: Returns styled image from styled/{style}/
+  - style + time/season: Returns moment variation from moments/{style}/{moment}/
+  - time/season only (no style): Returns moment variation of original from moments/original/{moment}/
+  
+  Returns the actual image file with appropriate content-type header.
+}
