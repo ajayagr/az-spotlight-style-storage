@@ -63,6 +63,12 @@ body {
 }
 
 /* View Toggle */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
 .view-toggle {
     display: flex;
     align-items: center;

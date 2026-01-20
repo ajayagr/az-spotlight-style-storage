@@ -10,6 +10,7 @@ const elements = {
     fileView: document.getElementById('fileView'),
     folderView: document.getElementById('folderView'),
     viewToggle: document.getElementById('viewToggle'),
+    hideMomentsToggle: document.getElementById('hideMomentsToggle'),
     uploadOverlay: document.getElementById('uploadOverlay'),
     statusIcon: document.getElementById('statusIcon'),
     uploadTitle: document.getElementById('uploadTitle'),
@@ -27,6 +28,22 @@ const elements = {
 
 // Image file extension pattern
 const IMAGE_EXTENSIONS = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
+
+// Moment folder names (from moments.json)
+const MOMENT_FOLDERS = ['morning', 'afternoon', 'evening', 'night', 'summer', 'winter', 'rain', 'spring'];
+
+/**
+ * Check if a file path belongs to a moment folder
+ */
+function isMomentFile(filePath) {
+    const pathLower = filePath.toLowerCase();
+    // Check if path starts with "moments/" or first folder is a moment folder
+    if (pathLower.startsWith('moments/')) {
+        return true;
+    }
+    const folder = pathLower.split('/')[0] || '';
+    return MOMENT_FOLDERS.includes(folder);
+}
 
 // Icon mapping for file types
 const FILE_ICONS = {
@@ -52,9 +69,17 @@ function buildFolderView() {
     const cards = elements.fileView.querySelectorAll('.file-card');
     const folders = new Map();
     const rootFiles = [];
+    const hideMoments = elements.hideMomentsToggle?.checked ?? true;
 
     cards.forEach(card => {
         const folder = card.dataset.folder;
+        const filePath = card.dataset.path;
+        
+        // Skip moment files if toggle is enabled
+        if (hideMoments && isMomentFile(filePath)) {
+            return;
+        }
+        
         const clone = card.cloneNode(true);
         
         // Re-attach event listeners using delegation pattern
@@ -168,6 +193,24 @@ function toggleView() {
     const showFolders = elements.viewToggle.checked;
     elements.fileView.classList.toggle('hidden', showFolders);
     elements.folderView.classList.toggle('hidden', !showFolders);
+}
+
+/**
+ * Apply moments visibility filter to file cards
+ */
+function applyMomentsFilter() {
+    const hideMoments = elements.hideMomentsToggle?.checked ?? true;
+    
+    // Apply filter to file view cards
+    elements.fileView.querySelectorAll('.file-card').forEach(card => {
+        const filePath = card.dataset.path;
+        if (isMomentFile(filePath)) {
+            card.style.display = hideMoments ? 'none' : '';
+        }
+    });
+    
+    // Rebuild folder view to apply filter there too
+    buildFolderView();
 }
 
 /**
@@ -1032,6 +1075,13 @@ elements.fileInput.addEventListener('change', async (e) => {
 // View toggle handler
 elements.viewToggle.addEventListener('change', toggleView);
 
+// Hide moments toggle handler
+if (elements.hideMomentsToggle) {
+    elements.hideMomentsToggle.addEventListener('change', applyMomentsFilter);
+    // Apply initial filter on load
+    applyMomentsFilter();
+}
+
 // Styles modal close on outside click
 elements.stylesModal.addEventListener('click', (e) => {
     if (e.target === elements.stylesModal) hideStylesModal();
@@ -1052,5 +1102,6 @@ Object.assign(window, {
     toggleAllFolders,
     smartRefreshFileList,
     runManualSync,
-    runMomentSync
+    runMomentSync,
+    applyMomentsFilter
 });
