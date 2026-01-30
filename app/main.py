@@ -1436,6 +1436,160 @@ def list_momentsync_jobs():
     }
 
 
+# ============================================================================
+# Image Restyle API Endpoint
+# ============================================================================
+
+class RestyleRequest(BaseModel):
+    """Request body for image restyle operation."""
+    prompt: str = Field(..., description="The prompt describing the desired style transformation")
+
+
+@app.post("/image/restyle", tags=["Images"])
+async def restyle_image(
+    file: UploadFile = File(..., description="The image file to restyle"),
+    prompt: str = Query(..., description="The prompt describing the desired style transformation"),
+    auth: str = Depends(get_api_key)
+):
+    """
+    Restyle an image using the Flux Kontext model.
+    
+    Takes an input image and a prompt, and generates a new styled image
+    using the Azure AI endpoint with the Flux Kontext model.
+    The output image preserves the original image dimensions.
+    
+    Requires API Key authentication.
+    
+    Returns the restyled image as a binary response.
+    """
+    from io import BytesIO
+    
+    try:
+        from PIL import Image
+    except ImportError:
+        raise HTTPException(
+            status_code=500,
+            detail="Pillow library not installed. Run: pip install Pillow"
+        )
+    
+    from .stylesync.clients import get_generator, GeneratorResult
+    
+    # Validate file is an image
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image")
+    
+    # Read the uploaded image
+    try:
+        image_data = await file.read()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read uploaded file: {str(e)}")
+    
+    # Get original image dimensions
+    try:
+        original_image = Image.open(BytesIO(image_data))
+        original_width, original_height = original_image.size
+        original_format = original_image.format or "PNG"
+        original_mode = original_image.mode
+        logger.info(f"Original image dimensions: {original_width}x{original_height}, format: {original_format}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse image: {str(e)}")
+    
+    # Get the Azure generator
+    try:
+        generator = get_generator("azure")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to initialize AI generator: {str(e)}")
+    
+    if not generator.is_configured():
+        missing = generator.get_missing_config()
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI generator not configured. Missing environment variables: {', '.join(missing)}"
+        )
+    
+    # Process the image with the prompt
+    try:
+        result: GeneratorResult = generator.process_image_bytes(
+            image_data=image_data,
+            filename=file.filename or "image.png",
+            prompt=prompt,
+            strength=1.0  # Full strength for restyle
+        )
+    except Exception as e:
+        logger.error(f"Error during image processing: {e}")
+        raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
+    
+    if not result.success:
+        logger.error(f"Restyle failed. Response info: {result.response_info}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Image restyle failed. {result.response_info}"
+        )
+    
+    # Resize the result to match original dimensions
+    try:
+        restyled_image = Image.open(BytesIO(result.data))
+        
+        # Only resize if dimensions differ
+        if restyled_image.size != (original_width, original_height):
+            logger.info(f"Resizing from {restyled_image.size} to {original_width}x{original_height}")
+            restyled_image = restyled_image.resize(
+                (original_width, original_height),
+                Image.Resampling.LANCZOS
+            )
+        
+        # Convert mode if necessary (handle RGBA for JPEG)
+        output_format = original_format.upper()
+        if output_format == "JPEG" and restyled_image.mode in ('RGBA', 'LA', 'P'):
+            # Convert to RGB for JPEG
+            background = Image.new('RGB', restyled_image.size, (255, 255, 255))
+            if restyled_image.mode == 'P':
+                restyled_image = restyled_image.convert('RGBA')
+            if restyled_image.mode == 'RGBA':
+                background.paste(restyled_image, mask=restyled_image.split()[-1])
+            else:
+                background.paste(restyled_image)
+            restyled_image = background
+        
+        # Save to bytes
+        output_buffer = BytesIO()
+        save_kwargs = {'format': output_format}
+        if output_format == 'JPEG':
+            save_kwargs['quality'] = 95
+        elif output_format == 'WEBP':
+            save_kwargs['quality'] = 95
+        
+        restyled_image.save(output_buffer, **save_kwargs)
+        output_bytes = output_buffer.getvalue()
+        
+    except Exception as e:
+        logger.error(f"Error resizing result image: {e}")
+        # Return the original result if resizing fails
+        output_bytes = result.data
+        output_format = "PNG"
+    
+    # Determine content type
+    content_type_map = {
+        "JPEG": "image/jpeg",
+        "JPG": "image/jpeg",
+        "PNG": "image/png",
+        "GIF": "image/gif",
+        "WEBP": "image/webp",
+        "BMP": "image/bmp"
+    }
+    content_type = content_type_map.get(output_format.upper(), "image/png")
+    
+    return Response(
+        content=output_bytes,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f'inline; filename="restyled_{file.filename or "image.png"}"',
+            "X-Original-Dimensions": f"{original_width}x{original_height}",
+            "X-Prompt": prompt[:100]  # Truncate prompt for header safety
+        }
+    )
+
+
 @app.get("/momentsync/moments", tags=["MomentSync"])
 def get_configured_moments():
     """

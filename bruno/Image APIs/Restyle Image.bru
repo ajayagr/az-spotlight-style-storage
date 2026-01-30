@@ -1,0 +1,51 @@
+meta {
+  name: Restyle Image
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/image/restyle?prompt=Transform this image into a watercolor painting style
+  body: multipartForm
+  auth: none
+}
+
+query {
+  prompt: Transform this image into a watercolor painting style
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+body:multipart-form {
+  file: @file(./sample-image.png)
+}
+
+docs {
+  # Restyle Image
+  
+  Restyle an image using the Flux Kontext model.
+  
+  Takes an input image and a prompt, and generates a new styled image using the Azure AI endpoint with the Flux Kontext model. The output image preserves the original image dimensions.
+  
+  ## Parameters
+  
+  - **file** (required): The image file to restyle (multipart form upload)
+  - **prompt** (required): The prompt describing the desired style transformation
+  
+  ## Authentication
+  
+  Requires API Key via `X-API-Key` header or `api_key` query parameter.
+  
+  ## Response
+  
+  Returns the restyled image as a binary response with the same dimensions as the input image.
+  
+  ### Response Headers
+  
+  - `Content-Type`: The MIME type of the output image (matches input format)
+  - `Content-Disposition`: Suggested filename for the restyled image
+  - `X-Original-Dimensions`: The original image dimensions (e.g., "1920x1080")
+  - `X-Prompt`: The prompt used (truncated to 100 characters)
+}

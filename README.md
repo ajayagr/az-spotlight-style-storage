@@ -61,12 +61,14 @@ az-spotlight-style-storage/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd az-spotlight-style-storage
    ```
 
 2. **Create a virtual environment**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # Linux/macOS
@@ -75,16 +77,18 @@ az-spotlight-style-storage/
    ```
 
 3. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Configure environment variables**
+
    ```bash
    # For Azure Blob Storage (optional - defaults to local storage)
    export AZURE_STORAGE_CONNECTION_STRING="your-connection-string"
    export CONTAINER_NAME="file-container"
-   
+
    # For API authentication
    export API_KEY="your-secure-api-key"
    ```
@@ -112,6 +116,7 @@ docker run -p 8000:8000 \
 ## 📖 API Reference
 
 ### Base URL
+
 ```
 http://localhost:8000
 ```
@@ -154,6 +159,7 @@ Retrieves a list of all files in storage.
 **Authentication**: Not required
 
 **Response**:
+
 ```json
 {
   "files": [
@@ -183,6 +189,7 @@ Upload a file to storage.
 | `folder` | string | query | Target folder path (optional) |
 
 **Example**:
+
 ```bash
 curl -X POST "http://localhost:8000/files?folder=images" \
   -H "X-API-Key: your-api-key" \
@@ -190,6 +197,7 @@ curl -X POST "http://localhost:8000/files?folder=images" \
 ```
 
 **Response**:
+
 ```json
 {
   "filename": "images/photo.jpg",
@@ -208,7 +216,8 @@ GET /files/{filename}
 
 Download a file from storage.
 
-**Authentication**: 
+**Authentication**:
+
 - **Not required** for image files
 - **Required** for non-image files
 
@@ -218,6 +227,7 @@ Download a file from storage.
 | `filename` | string | path | Full path to the file |
 
 **Example**:
+
 ```bash
 # Public image access
 curl "http://localhost:8000/files/images/photo.jpg" --output photo.jpg
@@ -249,6 +259,7 @@ Generate and return a thumbnail for an image file. Preserves aspect ratio based 
 | `height` | integer | query | Thumbnail height in pixels (10-500, default: 140) |
 
 **Example**:
+
 ```bash
 # Default height (140px)
 curl "http://localhost:8000/thumbnail/images/photo.jpg" --output thumb.jpg
@@ -260,6 +271,7 @@ curl "http://localhost:8000/thumbnail/images/photo.jpg?height=200" --output thum
 **Response**: Thumbnail image with preserved aspect ratio
 
 **Headers**:
+
 - `Cache-Control: public, max-age=604800, immutable` (7 days)
 - `ETag` for cache validation
 
@@ -283,12 +295,14 @@ Delete a file from storage.
 | `filename` | string | path | Full path to the file |
 
 **Example**:
+
 ```bash
 curl -X DELETE "http://localhost:8000/files/images/photo.jpg" \
   -H "X-API-Key: your-api-key"
 ```
 
 **Response**:
+
 ```json
 {
   "filename": "images/photo.jpg",
@@ -314,12 +328,14 @@ Delete all files within a folder.
 | `folder_path` | string | path | Path to the folder to delete |
 
 **Example**:
+
 ```bash
 curl -X DELETE "http://localhost:8000/folders/styled/geometric_3d" \
   -H "X-API-Key: your-api-key"
 ```
 
 **Response**:
+
 ```json
 {
   "folder": "styled/geometric_3d",
@@ -354,11 +370,13 @@ Get randomly selected images from the `STYLE_SYNC_DEFAULT_SOURCE_FOLDER`.
 | `count` | integer | query | Number of random images to return (1-20, default: 4) |
 
 **Example**:
+
 ```bash
 curl "http://localhost:8000/images/random?count=6"
 ```
 
 **Response**:
+
 ```json
 {
   "source_folder": "originals",
@@ -394,21 +412,25 @@ Get the path for a styled file if it exists, along with the icon path.
 | `id` | string | query | The image filename to look up. Use `-1` to get a random image. (required) |
 
 **Behavior**:
+
 - Style matching is **case-insensitive** and ignores spaces, underscores, and hyphens
 - If `id` is `-1`: Returns a random image from the style folder
 - If `style` is not found: Returns the original image from the source folder instead
 
 **Example - Specific file**:
+
 ```bash
 curl "http://localhost:8000/images/styled?style=Geometric3D&id=photo1.jpg"
 ```
 
 **Example - Random image**:
+
 ```bash
 curl "http://localhost:8000/images/styled?style=geometric3d&id=-1"
 ```
 
 **Response** (200):
+
 ```json
 {
   "style": "Geometric3D",
@@ -421,6 +443,7 @@ curl "http://localhost:8000/images/styled?style=geometric3d&id=-1"
 ```
 
 **Response when style not found** (200 - returns original):
+
 ```json
 {
   "style": "original",
@@ -433,6 +456,7 @@ curl "http://localhost:8000/images/styled?style=geometric3d&id=-1"
 ```
 
 **Error Response** (404):
+
 ```json
 {
   "detail": "Styled file not found: styled/geometric_3d/photo1.jpg"
@@ -458,16 +482,19 @@ Get a random image for the given style, excluding the current image. Useful for 
 | `id` | string | query | The current image filename to exclude (required) |
 
 **Behavior**:
+
 - Style matching is **case-insensitive** and ignores spaces, underscores, and hyphens
 - Returns a random image from the style folder, excluding the current image
 - If `style` is not found: Returns a random original image instead
 
 **Example**:
+
 ```bash
 curl "http://localhost:8000/images/next?style=Geometric3D&id=photo1.jpg"
 ```
 
 **Response** (200):
+
 ```json
 {
   "style": "Geometric3D",
@@ -481,6 +508,7 @@ curl "http://localhost:8000/images/next?style=Geometric3D&id=photo1.jpg"
 ```
 
 **Error Response** (404):
+
 ```json
 {
   "detail": "No other images found in folder: styled/geometric_3d"
@@ -505,11 +533,13 @@ Get all styled and moment variations available for a source image. Returns a com
 | `image_id` | string | path | The source image name **without extension** (e.g., "photo1") (required) |
 
 **Example**:
+
 ```bash
 curl "http://localhost:8000/images/variations/photo1"
 ```
 
 **Response** (200):
+
 ```json
 {
   "image_id": "photo1",
@@ -556,11 +586,57 @@ curl "http://localhost:8000/images/variations/photo1"
 > **Note**: Only variations that exist are included in the response.
 
 **Error Response** (404):
+
 ```json
 {
   "detail": "Source image not found: originals/photo1.jpg"
 }
 ```
+
+---
+
+### 5. Restyle Image
+
+```http
+POST /image/restyle
+```
+
+Restyle an image using the Flux Kontext model. Takes an input image and a prompt, and generates a new styled image. The output image preserves the original image dimensions.
+
+**Authentication**: Required
+
+**Parameters**:
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `file` | file | form-data | The image file to restyle (required) |
+| `prompt` | string | query | The prompt describing the desired style transformation (required) |
+
+**Example**:
+
+```bash
+curl -X POST "http://localhost:8000/image/restyle?prompt=Transform%20into%20watercolor%20style" \
+  -H "X-API-Key: your-api-key" \
+  -F "file=@photo.jpg" \
+  --output restyled.jpg
+```
+
+**Response**: Binary image data with the same dimensions as the input
+
+**Response Headers**:
+| Header | Description |
+|--------|-------------|
+| `Content-Type` | MIME type of the output image (matches input format) |
+| `Content-Disposition` | Suggested filename for the restyled image |
+| `X-Original-Dimensions` | The original image dimensions (e.g., "1920x1080") |
+| `X-Prompt` | The prompt used (truncated to 100 characters) |
+
+**Error Responses**:
+| Status | Description |
+|--------|-------------|
+| 400 | Invalid image file or failed to read file |
+| 403 | Invalid API key |
+| 500 | AI generator not configured or processing failed |
+| 503 | Missing Azure OpenAI configuration |
 
 ---
 
@@ -583,6 +659,7 @@ Execute style transformation synchronously. Waits for all images to be processed
 **Authentication**: Required
 
 **Request Body**:
+
 ```json
 {
   "source_path": "originals/",
@@ -599,6 +676,7 @@ Execute style transformation synchronously. Waits for all images to be processed
 > **Note**: If both request parameters and environment variables are empty, the service will process images from the root of storage.
 
 **Example**:
+
 ```bash
 curl -X POST "http://localhost:8000/stylesync" \
   -H "X-API-Key: your-api-key" \
@@ -610,6 +688,7 @@ curl -X POST "http://localhost:8000/stylesync" \
 ```
 
 **Response**:
+
 ```json
 {
   "status": "completed",
@@ -624,6 +703,7 @@ curl -X POST "http://localhost:8000/stylesync" \
 
 **Output Structure**:
 Processed images are organized by style folder:
+
 ```
 styled-photos/
 ├── original/           # Copy of source images
@@ -654,6 +734,7 @@ Execute style transformation as a background job. Returns immediately with a job
 **Request Body**: Same as `/stylesync`
 
 **Example**:
+
 ```bash
 curl -X POST "http://localhost:8000/stylesync/async" \
   -H "X-API-Key: your-api-key" \
@@ -662,6 +743,7 @@ curl -X POST "http://localhost:8000/stylesync/async" \
 ```
 
 **Response**:
+
 ```json
 {
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -702,11 +784,13 @@ Check the status of a background StyleSync job.
 | `job_id` | string | path | UUID of the background job |
 
 **Example**:
+
 ```bash
 curl "http://localhost:8000/stylesync/status/550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Response**:
+
 ```json
 {
   "status": "running",
@@ -759,19 +843,21 @@ List all valid images that can be styled from a source path.
 | `source_path` | string | Optional path prefix to filter images |
 
 **Example**:
+
 ```bash
 curl "http://localhost:8000/stylesync/images?source_path=photos/"
 ```
 
 **Response**:
+
 ```json
 {
   "source_path": "photos/",
   "count": 3,
   "images": [
-    {"name": "photo1.jpg", "path": "photos/photo1.jpg"},
-    {"name": "photo2.png", "path": "photos/photo2.png"},
-    {"name": "photo3.webp", "path": "photos/photo3.webp"}
+    { "name": "photo1.jpg", "path": "photos/photo1.jpg" },
+    { "name": "photo2.png", "path": "photos/photo2.png" },
+    { "name": "photo3.webp", "path": "photos/photo3.webp" }
   ]
 }
 ```
@@ -789,11 +875,13 @@ Get the list of styles configured in `styles.json` that will be applied during S
 **Authentication**: Not required
 
 **Example**:
+
 ```bash
 curl "http://localhost:8000/stylesync/styles"
 ```
 
 **Response**:
+
 ```json
 {
   "count": 3,
@@ -836,11 +924,13 @@ List available AI providers and their configuration status.
 **Authentication**: Not required
 
 **Example**:
+
 ```bash
 curl "http://localhost:8000/stylesync/providers"
 ```
 
 **Response**:
+
 ```json
 {
   "providers": [
@@ -865,6 +955,7 @@ curl "http://localhost:8000/stylesync/providers"
 ## 🕐 MomentSync APIs
 
 MomentSync creates time-of-day and season variations of styled images. For each styled image, it generates:
+
 - **4 standalone times**: morning, afternoon, evening, night
 - **4 standalone seasons**: summer, winter, rain, spring
 - **16 composites**: all time + season combinations
@@ -881,6 +972,7 @@ Apply moment variations to styled images synchronously.
 **Authentication**: Required
 
 **Request Body**:
+
 ```json
 {
   "styled_path": "styled/",
@@ -889,11 +981,11 @@ Apply moment variations to styled images synchronously.
 }
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `styled_path` | string | No | Path containing styled images. Defaults to `STYLE_SYNC_DEFAULT_TARGET_FOLDER` |
-| `output_path` | string | No | Output path for moment variations. Defaults to `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` |
-| `style_folders` | array | No | Specific style folders to process. If empty, processes all |
+| Parameter       | Type   | Required | Description                                                                        |
+| --------------- | ------ | -------- | ---------------------------------------------------------------------------------- |
+| `styled_path`   | string | No       | Path containing styled images. Defaults to `STYLE_SYNC_DEFAULT_TARGET_FOLDER`      |
+| `output_path`   | string | No       | Output path for moment variations. Defaults to `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` |
+| `style_folders` | array  | No       | Specific style folders to process. If empty, processes all                         |
 
 ---
 
@@ -908,6 +1000,7 @@ Start a background MomentSync job. Returns immediately with a job ID.
 **Authentication**: Required
 
 **Response**:
+
 ```json
 {
   "job_id": "abc-123-def",
@@ -945,6 +1038,7 @@ Check the status of a background MomentSync job.
 **Authentication**: Not required
 
 **Response**:
+
 ```json
 {
   "status": "running",
@@ -954,7 +1048,10 @@ Check the status of a background MomentSync job.
   "to_generate": 200,
   "to_skip": 40,
   "to_delete": 0,
-  "processed": ["geometric_3d/morning/image.jpg", "geometric_3d/summer/image.jpg"],
+  "processed": [
+    "geometric_3d/morning/image.jpg",
+    "geometric_3d/summer/image.jpg"
+  ],
   "failed": [],
   "skipped": [],
   "deleted": [],
@@ -991,19 +1088,34 @@ Get the list of moment configurations from moments.json.
 **Authentication**: Not required
 
 **Response**:
+
 ```json
 {
   "times_of_day": {
     "count": 4,
-    "items": [{"name": "Morning", "folder_name": "morning", "prompt_text": "...", "strength": 0.6}]
+    "items": [
+      {
+        "name": "Morning",
+        "folder_name": "morning",
+        "prompt_text": "...",
+        "strength": 0.6
+      }
+    ]
   },
   "seasons": {
     "count": 4,
-    "items": [{"name": "Summer", "folder_name": "summer", "prompt_text": "...", "strength": 0.6}]
+    "items": [
+      {
+        "name": "Summer",
+        "folder_name": "summer",
+        "prompt_text": "...",
+        "strength": 0.6
+      }
+    ]
   },
   "composites": {
     "count": 16,
-    "items": [{"name": "Morning + Summer", "folder_name": "morning_summer"}]
+    "items": [{ "name": "Morning + Summer", "folder_name": "morning_summer" }]
   },
   "total_variations": 24
 }
@@ -1015,38 +1127,42 @@ Get the list of moment configurations from moments.json.
 
 ### Application Configuration
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `AZURE_STORAGE_CONNECTION_STRING` | No | - | Azure Storage connection string. If not set, uses local storage |
-| `CONTAINER_NAME` | No | `file-container` | Azure Blob container name |
-| `API_KEY` | No | `default-insecure-key` | API key for protected endpoints |
-| `STYLE_SYNC_DEFAULT_SOURCE_FOLDER` | No | `""` | Default source path for StyleSync when not specified in request |
-| `STYLE_SYNC_DEFAULT_TARGET_FOLDER` | No | `styled/` | Default output path for StyleSync when not specified in request |
-| `STYLE_SYNC_ICON_FOLDER` | No | `icons/` | Folder where style icons are stored |
-| `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` | No | `moments/` | Default output path for MomentSync moment variations |
+| Variable                            | Required | Default                | Description                                                     |
+| ----------------------------------- | -------- | ---------------------- | --------------------------------------------------------------- |
+| `AZURE_STORAGE_CONNECTION_STRING`   | No       | -                      | Azure Storage connection string. If not set, uses local storage |
+| `CONTAINER_NAME`                    | No       | `file-container`       | Azure Blob container name                                       |
+| `API_KEY`                           | No       | `default-insecure-key` | API key for protected endpoints                                 |
+| `STYLE_SYNC_DEFAULT_SOURCE_FOLDER`  | No       | `""`                   | Default source path for StyleSync when not specified in request |
+| `STYLE_SYNC_DEFAULT_TARGET_FOLDER`  | No       | `styled/`              | Default output path for StyleSync when not specified in request |
+| `STYLE_SYNC_ICON_FOLDER`            | No       | `icons/`               | Folder where style icons are stored                             |
+| `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` | No       | `moments/`             | Default output path for MomentSync moment variations            |
 
 ### Azure OpenAI Provider Configuration
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `AZURE_OPENAI_ENDPOINT` | Yes* | - | Azure OpenAI endpoint URL (e.g., `https://your-resource.openai.azure.com/...`) |
-| `AZURE_OPENAI_API_KEY` | Yes* | - | Azure OpenAI API key |
-| `AZURE_OPENAI_MODEL` | No | `flux.1-kontext-pro` | Model deployment name to use |
+| Variable                | Required | Default              | Description                                                                    |
+| ----------------------- | -------- | -------------------- | ------------------------------------------------------------------------------ |
+| `AZURE_OPENAI_ENDPOINT` | Yes\*    | -                    | Azure OpenAI endpoint URL (e.g., `https://your-resource.openai.azure.com/...`) |
+| `AZURE_OPENAI_API_KEY`  | Yes\*    | -                    | Azure OpenAI API key                                                           |
+| `AZURE_OPENAI_MODEL`    | No       | `flux.1-kontext-pro` | Model deployment name to use                                                   |
 
-*Required when using StyleSync
+\*Required when using StyleSync
 
 ---
 
 ## 🔧 Storage Modes
 
 ### Azure Blob Storage Mode
+
 When `AZURE_STORAGE_CONNECTION_STRING` is configured, files are stored in Azure Blob Storage:
+
 - Automatic container creation if it doesn't exist
 - Full blob path support with folders
 - Scalable cloud storage
 
 ### Local Storage Mode
+
 When no connection string is provided, files are stored locally:
+
 - Files saved in `local_storage/` directory
 - Full folder structure support
 - Ideal for development and testing
@@ -1056,9 +1172,11 @@ When no connection string is provided, files are stored locally:
 ## 🎨 AI Provider
 
 ### Azure OpenAI (Flux)
+
 Uses the Flux.1-Kontext-Pro model (or custom model) for high-quality image transformations.
 
 **Configuration**:
+
 ```bash
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/openai/deployments/your-deployment/images/generations?api-version=2024-02-01"
 export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
@@ -1074,6 +1192,7 @@ StyleSync reads style definitions from the `styles.json` file in the project roo
 **File Location**: `./styles.json`
 
 **Example styles.json**:
+
 ```json
 {
   "styles": [

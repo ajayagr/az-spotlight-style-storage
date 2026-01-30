@@ -70,6 +70,7 @@ az-spotlight-style-storage/
 ## Key Files Reference
 
 ### `app/main.py`
+
 - **Purpose**: FastAPI application with all route handlers
 - **Key Components**:
   - `StorageService` and `StyleSyncService` initialization
@@ -84,13 +85,15 @@ az-spotlight-style-storage/
   - `find_style_by_name()`: Case-insensitive style lookup
 
 ### `app/storage.py`
+
 - **Purpose**: Abstraction layer for file storage
-- **Modes**: 
+- **Modes**:
   - `AZURE`: Uses Azure Blob Storage when `AZURE_STORAGE_CONNECTION_STRING` is set
   - `LOCAL`: Uses `local_storage/` directory otherwise
 - **Methods**: `upload_file()`, `get_file()`, `list_files()`, `delete_file()`, `delete_folder()`
 
 ### `app/stylesync/sync.py`
+
 - **Purpose**: Core style transfer orchestration
 - **Key Classes**:
   - `StyleConfig`: Style definition (name, prompt, folder_name, strength)
@@ -105,6 +108,7 @@ az-spotlight-style-storage/
   - `process_sync()`: Executes full sync operation (creates new + deletes orphaned)
 
 ### `app/stylesync/clients/azure.py`
+
 - **Purpose**: Azure OpenAI image generation
 - **Environment Variables**:
   - `AZURE_OPENAI_ENDPOINT`: API endpoint URL
@@ -113,6 +117,7 @@ az-spotlight-style-storage/
 - **Method**: `process_image_bytes()`: Sends image + prompt to Azure, returns styled image
 
 ### `app/static/css/styles.css`
+
 - **Purpose**: All application CSS styles (extracted from index.html)
 - **Features**:
   - CSS custom properties for theming
@@ -122,6 +127,7 @@ az-spotlight-style-storage/
 - **Key Animations**: `spin`, `slideIn`, `slideOut`, `slideDown`, `slideUp`, `pulse`
 
 ### `app/static/js/app.js`
+
 - **Purpose**: Main application JavaScript (native ES6+)
 - **Architecture**: Uses cached DOM element references, event delegation, DocumentFragment for batch updates
 - **Key Functions**:
@@ -135,6 +141,7 @@ az-spotlight-style-storage/
 - **Native JS Features Used**: `Map`, `Set`, arrow functions, template literals, `async/await`, optional chaining (`?.`), nullish coalescing (`??`), `Array.at()`, spread operator, destructuring
 
 ### `app/templates/index.html`
+
 - **Purpose**: Minimal HTML template - structure only
 - **Features**:
   - References external CSS (`/static/css/styles.css`)
@@ -143,6 +150,7 @@ az-spotlight-style-storage/
   - Inline script for attaching initial event listeners
 
 ### `styles.json`
+
 - **Purpose**: Style configuration file
 - **Structure**:
   ```json
@@ -161,15 +169,26 @@ az-spotlight-style-storage/
 - **Used By**: `/stylesync/styles` endpoint and `process_sync()` method
 
 ### `moments.json`
+
 - **Purpose**: Moment-in-time variation configuration
 - **Structure**:
   ```json
   {
     "times_of_day": [
-      { "name": "Morning", "folder_name": "morning", "prompt_text": "...", "strength": 0.6 }
+      {
+        "name": "Morning",
+        "folder_name": "morning",
+        "prompt_text": "...",
+        "strength": 0.6
+      }
     ],
     "seasons": [
-      { "name": "Summer", "folder_name": "summer", "prompt_text": "...", "strength": 0.6 }
+      {
+        "name": "Summer",
+        "folder_name": "summer",
+        "prompt_text": "...",
+        "strength": 0.6
+      }
     ],
     "composite_strength": 0.65
   }
@@ -182,6 +201,7 @@ az-spotlight-style-storage/
 - **Used By**: `/momentsync/moments` endpoint and `MomentSyncService.process_sync()`
 
 ### `app/momentsync/sync.py`
+
 - **Purpose**: Moment-in-time variation orchestration
 - **Key Classes**:
   - `MomentConfig`: Time/season definition (name, folder_name, prompt, strength)
@@ -201,62 +221,68 @@ az-spotlight-style-storage/
 ## API Endpoints Summary
 
 ### File Management
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` | No | Web UI |
-| GET | `/files` | No | List all files |
-| POST | `/files` | Yes | Upload file (supports `folder` query param) |
-| GET | `/files/{path}` | Images: No, Others: Yes | Download file |
-| DELETE | `/files/{path}` | Yes | Delete file |
-| DELETE | `/folders/{path}` | Yes | Delete folder and contents |
+
+| Method | Endpoint          | Auth                    | Description                                 |
+| ------ | ----------------- | ----------------------- | ------------------------------------------- |
+| GET    | `/`               | No                      | Web UI                                      |
+| GET    | `/files`          | No                      | List all files                              |
+| POST   | `/files`          | Yes                     | Upload file (supports `folder` query param) |
+| GET    | `/files/{path}`   | Images: No, Others: Yes | Download file                               |
+| DELETE | `/files/{path}`   | Yes                     | Delete file                                 |
+| DELETE | `/folders/{path}` | Yes                     | Delete folder and contents                  |
 
 ### Image Discovery
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/images/random` | No | Get random images from source folder |
-| GET | `/images/styled` | No | Get styled image path by style and id |
-| GET | `/images/next` | No | Get next random image (excluding current) |
+
+| Method | Endpoint         | Auth | Description                               |
+| ------ | ---------------- | ---- | ----------------------------------------- |
+| GET    | `/images/random` | No   | Get random images from source folder      |
+| GET    | `/images/styled` | No   | Get styled image path by style and id     |
+| GET    | `/images/next`   | No   | Get next random image (excluding current) |
+| POST   | `/image/restyle` | Yes  | Restyle an image with custom prompt       |
 
 ### StyleSync
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/stylesync` | Yes | Run sync (synchronous) |
-| POST | `/stylesync/async` | Yes | Run sync (background job) |
-| GET | `/stylesync/status/{job_id}` | No | Check job status |
-| GET | `/stylesync/images` | No | List styleable images |
-| GET | `/stylesync/styles` | No | Get configured styles |
-| GET | `/stylesync/providers` | No | List AI providers |
+
+| Method | Endpoint                     | Auth | Description               |
+| ------ | ---------------------------- | ---- | ------------------------- |
+| POST   | `/stylesync`                 | Yes  | Run sync (synchronous)    |
+| POST   | `/stylesync/async`           | Yes  | Run sync (background job) |
+| GET    | `/stylesync/status/{job_id}` | No   | Check job status          |
+| GET    | `/stylesync/images`          | No   | List styleable images     |
+| GET    | `/stylesync/styles`          | No   | Get configured styles     |
+| GET    | `/stylesync/providers`       | No   | List AI providers         |
 
 ### MomentSync
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/momentsync` | Yes | Run moment sync (synchronous) |
-| POST | `/momentsync/async` | Yes | Run moment sync (background job) |
-| GET | `/momentsync/status/{job_id}` | No | Check job status |
-| GET | `/momentsync/moments` | No | Get configured moments |
+
+| Method | Endpoint                      | Auth | Description                      |
+| ------ | ----------------------------- | ---- | -------------------------------- |
+| POST   | `/momentsync`                 | Yes  | Run moment sync (synchronous)    |
+| POST   | `/momentsync/async`           | Yes  | Run moment sync (background job) |
+| GET    | `/momentsync/status/{job_id}` | No   | Check job status                 |
+| GET    | `/momentsync/moments`         | No   | Get configured moments           |
 
 ---
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `AZURE_STORAGE_CONNECTION_STRING` | No | - | Azure Storage connection (uses local if not set) |
-| `CONTAINER_NAME` | No | `file-container` | Azure Blob container name |
-| `API_KEY` | No | `default-insecure-key` | API authentication key |
-| `STYLE_SYNC_DEFAULT_SOURCE_FOLDER` | No | `source/` | Default source path for StyleSync |
-| `STYLE_SYNC_DEFAULT_TARGET_FOLDER` | No | `styled/` | Default output path for StyleSync |
-| `STYLE_SYNC_ICON_FOLDER` | No | `icons/` | Folder for style icons |
-| `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` | No | `moments/` | Default output path for MomentSync |
-| `AZURE_OPENAI_ENDPOINT` | For StyleSync | - | Azure OpenAI endpoint URL |
-| `AZURE_OPENAI_API_KEY` | For StyleSync | - | Azure OpenAI API key |
-| `AZURE_OPENAI_MODEL` | No | `flux.1-kontext-pro` | Model deployment name |
+| Variable                            | Required      | Default                | Description                                      |
+| ----------------------------------- | ------------- | ---------------------- | ------------------------------------------------ |
+| `AZURE_STORAGE_CONNECTION_STRING`   | No            | -                      | Azure Storage connection (uses local if not set) |
+| `CONTAINER_NAME`                    | No            | `file-container`       | Azure Blob container name                        |
+| `API_KEY`                           | No            | `default-insecure-key` | API authentication key                           |
+| `STYLE_SYNC_DEFAULT_SOURCE_FOLDER`  | No            | `source/`              | Default source path for StyleSync                |
+| `STYLE_SYNC_DEFAULT_TARGET_FOLDER`  | No            | `styled/`              | Default output path for StyleSync                |
+| `STYLE_SYNC_ICON_FOLDER`            | No            | `icons/`               | Folder for style icons                           |
+| `MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER` | No            | `moments/`             | Default output path for MomentSync               |
+| `AZURE_OPENAI_ENDPOINT`             | For StyleSync | -                      | Azure OpenAI endpoint URL                        |
+| `AZURE_OPENAI_API_KEY`              | For StyleSync | -                      | Azure OpenAI API key                             |
+| `AZURE_OPENAI_MODEL`                | No            | `flux.1-kontext-pro`   | Model deployment name                            |
 
 ---
 
 ## Coding Patterns & Conventions
 
 ### Python
+
 - **Framework**: FastAPI with Pydantic models
 - **Async**: Background tasks via `BackgroundTasks`
 - **Logging**: Use `logging.getLogger(__name__)`
@@ -264,18 +290,22 @@ az-spotlight-style-storage/
 - **Dataclasses**: Used for `StyleConfig`, `SyncTask`, `SyncResult`, `GeneratorResult`
 
 ### JavaScript (index.html)
+
 - **No Framework**: Vanilla JavaScript
 - **DOM Access**: Use `document.getElementById()` and `document.querySelector()`
 - **Async/Await**: Preferred for fetch operations
 - **Event Handlers**: Mix of inline (`onclick`) and `addEventListener`
 
 ### File Naming
+
 - Python: `snake_case.py`
 - Folders: `lowercase/`
 - Style folders: Uses `folder_name` from `styles.json` config (falls back to sanitized style name)
 
 ### Output Structure
+
 StyleSync creates this folder structure:
+
 ```
 <output_path>/
 ├── original/           # Copy of source images
@@ -287,6 +317,7 @@ StyleSync creates this folder structure:
 ```
 
 MomentSync creates this folder structure:
+
 ```
 <moments_output_path>/
 ├── original/               # Moment variations from original source images
@@ -309,7 +340,7 @@ MomentSync creates this folder structure:
     └── ...
 ```
 
-**Note**: MomentSync automatically includes the `styled/original/` folder (created by StyleSync) 
+**Note**: MomentSync automatically includes the `styled/original/` folder (created by StyleSync)
 to generate moment variations from original source images. These are stored in `moments/original/...`.
 
 ---
@@ -317,6 +348,7 @@ to generate moment variations from original source images. These are stored in `
 ## Common Tasks
 
 ### Adding a New API Endpoint
+
 1. Add route handler in `app/main.py`
 2. Define Pydantic models if needed (request/response)
 3. Add example to `sample.REST`
@@ -324,17 +356,20 @@ to generate moment variations from original source images. These are stored in `
 5. Update `instructions.md` with endpoint details (this file)
 
 ### Adding a New Style
+
 1. Edit `styles.json` - add new style object
 2. Optionally add icon to icons folder
 3. No code changes needed
 
 ### Modifying UI
+
 1. Edit `app/templates/index.html`
 2. Test file operations preserve toast notifications
 3. Ensure `refreshFileList()` is called after operations
 4. Update `instructions.md` if adding new key functions or patterns
 
 ### Adding AI Provider (future)
+
 1. Create new client in `app/stylesync/clients/`
 2. Inherit from `BaseGenerator`
 3. Implement `process_image_bytes()` method
@@ -360,7 +395,7 @@ to generate moment variations from original source images. These are stored in `
 
 7. **Orphan Cleanup**: StyleSync automatically deletes styled images when their source image is deleted. The `deleted` field in `SyncResult` tracks removed files.
 
-8. **Authentication**: 
+8. **Authentication**:
    - Images are public (no auth needed)
    - Uploads, deletes, and StyleSync require API key
    - API key via header `X-API-Key` or query param `api_key`
