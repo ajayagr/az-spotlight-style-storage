@@ -483,22 +483,11 @@ function createFileCard(filePath, fileName, folder) {
     card.querySelector('.card-content').addEventListener('click', () => downloadFile(filePath));
     card.querySelector('.btn-delete').addEventListener('click', (e) => deleteFile(filePath, e));
 
-    // Add image loading optimization for thumbnails
+    // Add error handling for thumbnails
     if (isImage) {
         const img = card.querySelector('.thumb-img');
-        const container = card.querySelector('.thumb-container');
-
-        if (img && container) {
-            // Show loading state
-            container.classList.add('loading');
-
-            img.addEventListener('load', () => {
-                container.classList.remove('loading');
-                img.classList.add('loaded');
-            });
-
+        if (img) {
             img.addEventListener('error', () => {
-                container.classList.remove('loading');
                 img.classList.add('error');
                 // Fallback to full image if thumbnail fails
                 const fullPath = img.dataset.fullPath;

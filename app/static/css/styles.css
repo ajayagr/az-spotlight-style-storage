@@ -223,19 +223,12 @@ input:checked + .slider::before {
     height: 100%;
     object-fit: cover;
     content-visibility: auto;
-    transition: opacity 0.3s ease;
-}
-
-.thumb-img:not(.loaded) {
-    opacity: 0;
-}
-
-.thumb-img.loaded {
     opacity: 1;
 }
 
 .thumb-img.error {
     opacity: 0.3;
+    filter: grayscale(50%);
 }
 
 /* Loading skeleton animation */
