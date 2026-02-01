@@ -1,3 +1,7 @@
+"""
+Azure File Storage API - v2.1.0
+CDN-enabled with lazy loading optimizations
+"""
 import os
 import json
 import logging
