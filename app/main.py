@@ -207,12 +207,12 @@ def get_file(
             # Check if browser has cached version (If-None-Match)
             if if_none_match and (if_none_match == etag_quoted or if_none_match == etag):
                 return Response(status_code=304, headers={
-                    "Cache-Control": "public, max-age=86400, must-revalidate",
+                    "Cache-Control": "public, max-age=604800, immutable",  # 7 days
                     "ETag": etag_quoted
                 })
-            
+
             headers = {
-                "Cache-Control": "public, max-age=86400, must-revalidate",  # 1 day
+                "Cache-Control": "public, max-age=604800, immutable",  # 7 days cache - images are immutable
                 "ETag": etag_quoted
             }
             
