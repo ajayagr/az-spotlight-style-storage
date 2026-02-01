@@ -32,6 +32,45 @@ const IMAGE_EXTENSIONS = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
 // Moment folder names (from moments.json)
 const MOMENT_FOLDERS = ['morning', 'afternoon', 'evening', 'night', 'summer', 'winter', 'rain', 'spring'];
 
+// Lazy Loading with IntersectionObserver
+// Best practice: 300px rootMargin for preloading images before they enter viewport
+let imageObserver = null;
+
+function initLazyLoading() {
+    if ('IntersectionObserver' in window) {
+        imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    const src = img.dataset.src;
+
+                    if (src) {
+                        img.src = src;
+                        img.removeAttribute('data-src');
+                        observer.unobserve(img);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '300px', // Load images 300px before they enter viewport
+            threshold: 0.01
+        });
+    }
+}
+
+function observeImage(img) {
+    if (imageObserver) {
+        imageObserver.observe(img);
+    } else {
+        // Fallback for browsers without IntersectionObserver
+        const src = img.dataset.src;
+        if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+        }
+    }
+}
+
 /**
  * Check if a file path belongs to a moment folder
  */
@@ -125,20 +164,31 @@ function buildFolderView() {
     }
 
     // Root Files First
+    let isFirstSection = true;
     if (rootFiles.length > 0) {
         const section = createFolderSection('', 'Root', 'fa-home', rootFiles.length);
         const grid = section.querySelector('.folder-content');
         rootFiles.forEach(f => grid.append(f));
         elements.folderView.append(section);
+        isFirstSection = false;
     }
 
-    // Sorted Folders
+    // Sorted Folders - collapse all except first
     [...folders.keys()].sort().forEach(folderName => {
         const files = folders.get(folderName);
         const section = createFolderSection(folderName, folderName, 'fa-folder', files.length);
         const grid = section.querySelector('.folder-content');
         files.forEach(f => grid.append(f));
         elements.folderView.append(section);
+
+        // Collapse all folders except the first one
+        if (!isFirstSection) {
+            const header = section.querySelector('.folder-header');
+            const content = section.querySelector('.folder-content');
+            header.classList.add('collapsed');
+            content.classList.add('collapsed');
+        }
+        isFirstSection = false;
     });
 
     // Empty state
@@ -459,9 +509,10 @@ function createFileCard(filePath, fileName, folder) {
     // Use optimized thumbnails for images (300px height for good quality/performance balance)
     // Full images are loaded only when clicked for viewing/download
     // Use CDN if configured, otherwise use relative URLs
+    // Use data-src for lazy loading with IntersectionObserver
     const cdnPrefix = window.CDN_DOMAIN || '';
     const thumbContent = isImage
-        ? `<img src="${cdnPrefix}/thumbnail/${filePath}?height=300" class="thumb-img" alt="${fileName}" loading="lazy" data-full-path="${cdnPrefix}/files/${filePath}">`
+        ? `<img data-src="${cdnPrefix}/thumbnail/${filePath}?height=300" class="thumb-img" alt="${fileName}" data-full-path="${cdnPrefix}/files/${filePath}">`
         : `<i class="fas ${iconInfo.class} file-icon" style="color: ${iconInfo.color};"></i>`;
     
     const folderBadge = folder 
@@ -485,10 +536,13 @@ function createFileCard(filePath, fileName, folder) {
     card.querySelector('.card-content').addEventListener('click', () => downloadFile(filePath));
     card.querySelector('.btn-delete').addEventListener('click', (e) => deleteFile(filePath, e));
 
-    // Add error handling for thumbnails
+    // Add lazy loading and error handling for thumbnails
     if (isImage) {
         const img = card.querySelector('.thumb-img');
         if (img) {
+            // Set up lazy loading with IntersectionObserver
+            observeImage(img);
+
             img.addEventListener('error', () => {
                 img.classList.add('error');
                 // Fallback to full image if thumbnail fails
@@ -1106,6 +1160,9 @@ elements.stylesModal.addEventListener('click', (e) => {
     if (e.target === elements.stylesModal) hideStylesModal();
 });
 
+// Initialize lazy loading observer
+initLazyLoading();
+
 // Initialize folder view on load
 buildFolderView();
 
@@ -1122,5 +1179,6 @@ Object.assign(window, {
     smartRefreshFileList,
     runManualSync,
     runMomentSync,
-    applyMomentsFilter
+    applyMomentsFilter,
+    observeImage
 });
