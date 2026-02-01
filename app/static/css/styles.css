@@ -914,6 +914,40 @@ body:has(.stylesync-banner:not(.hidden)) .container {
     animation: spin 1s linear infinite;
 }
 
+.check-status-btn {
+    background: linear-gradient(135deg, #ca5010 0%, #a74109 100%);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-weight: 500;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.check-status-btn:hover {
+    background: linear-gradient(135deg, #a74109 0%, #ca5010 100%);
+    box-shadow: 0 2px 8px rgba(202, 80, 16, 0.3);
+}
+
+.check-status-btn:active {
+    transform: scale(0.98);
+}
+
+.check-status-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.check-status-btn .fa-tasks.spinning {
+    animation: spin 1s linear infinite;
+}
+
 .refresh-btn {
     background: linear-gradient(135deg, #107c10 0%, #0b5c0b 100%);
     border: none;

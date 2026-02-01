@@ -49,6 +49,9 @@
         <button class="run-moments-btn" id="runMomentsBtn">
             <i class="fas fa-clock"></i> Run Moments
         </button>
+        <button class="check-status-btn" id="checkStatusBtn">
+            <i class="fas fa-tasks"></i> Check Sync Status
+        </button>
         <button class="view-styles-btn" id="viewStylesBtn">
             <i class="fas fa-palette"></i> View Styles
         </button>
@@ -169,7 +172,10 @@
     
     // Run moments button
     document.getElementById('runMomentsBtn').addEventListener('click', runMomentSync);
-    
+
+    // Check sync status button
+    document.getElementById('checkStatusBtn').addEventListener('click', checkSyncStatus);
+
     // Refresh button
     document.getElementById('refreshBtn').addEventListener('click', smartRefreshFileList);
     

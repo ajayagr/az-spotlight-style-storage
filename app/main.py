@@ -1690,3 +1690,97 @@ def get_configured_moments():
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/sync/status", tags=["Sync"])
+def check_sync_status():
+    """
+    Check how many StyleSync and MomentSync files are missing.
+    Returns counts of source images, styled images, and moment variations
+    that need to be created.
+    """
+    try:
+        # Get all files
+        all_files = storage.list_files()
+        all_files_set = set(all_files)
+
+        # Load styles configuration
+        styles = []
+        try:
+            with open('styles.json', 'r') as f:
+                config = json.load(f)
+                styles = config.get('styles', [])
+        except:
+            pass
+
+        # Load moments configuration
+        moments = []
+        try:
+            with open('moments.json', 'r') as f:
+                config = json.load(f)
+                times_of_day = config.get('times_of_day', [])
+                seasons = config.get('seasons', [])
+                # Generate all moment combinations
+                for t in times_of_day:
+                    moments.append(t['folder_name'])
+                for s in seasons:
+                    moments.append(s['folder_name'])
+                for t in times_of_day:
+                    for s in seasons:
+                        moments.append(f"{t['folder_name']}_{s['folder_name']}")
+        except:
+            pass
+
+        # Get source images
+        source_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
+        source_images = []
+        for file_path in all_files:
+            if source_folder:
+                if not file_path.startswith(source_folder + "/") and not file_path.startswith(source_folder):
+                    continue
+            ext = Path(file_path).suffix.lower()
+            if ext in {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}:
+                source_images.append(file_path)
+
+        # Check what styled images are missing
+        missing_styled = []
+        existing_styled = []
+        for source_img in source_images:
+            filename = Path(source_img).name
+            for style in styles:
+                styled_path = f"{style['folder_name']}/{filename}"
+                if styled_path in all_files_set:
+                    existing_styled.append(styled_path)
+                else:
+                    missing_styled.append(styled_path)
+
+        # Check what moment images are missing
+        missing_moments = []
+        existing_moments = []
+        for styled_img in existing_styled:
+            filename = Path(styled_img).name
+            style_folder = str(Path(styled_img).parent).replace("\\", "/")
+            for moment in moments:
+                moment_path = f"moments/{style_folder}/{moment}/{filename}"
+                if moment_path in all_files_set:
+                    existing_moments.append(moment_path)
+                else:
+                    missing_moments.append(moment_path)
+
+        return {
+            "source_images": len(source_images),
+            "styles_configured": len(styles),
+            "moments_configured": len(moments),
+            "stylesync": {
+                "expected": len(source_images) * len(styles),
+                "existing": len(existing_styled),
+                "missing": len(missing_styled)
+            },
+            "momentsync": {
+                "expected": len(existing_styled) * len(moments),
+                "existing": len(existing_moments),
+                "missing": len(missing_moments)
+            },
+            "total_files_checked": len(all_files)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check sync status: {str(e)}")

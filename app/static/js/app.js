@@ -700,6 +700,56 @@ async function runManualSync() {
 }
 
 /**
+ * Check sync status - show missing files count
+ */
+async function checkSyncStatus() {
+    const btn = document.getElementById('checkStatusBtn');
+    const icon = btn.querySelector('.fa-tasks');
+
+    // Disable button and show spinning icon
+    btn.disabled = true;
+    icon.classList.add('spinning');
+
+    try {
+        const response = await fetch('/sync/status');
+
+        if (response.ok) {
+            const result = await response.json();
+
+            // Format the status message
+            let message = `📊 Source Images: ${result.source_images}\n\n`;
+            message += `🎨 StyleSync:\n`;
+            message += `   ${result.stylesync.existing}/${result.stylesync.expected} created`;
+            if (result.stylesync.missing > 0) {
+                message += ` (${result.stylesync.missing} missing)`;
+            }
+            message += `\n\n⏰ MomentSync:\n`;
+            message += `   ${result.momentsync.existing}/${result.momentsync.expected} created`;
+            if (result.momentsync.missing > 0) {
+                message += ` (${result.momentsync.missing} missing)`;
+            }
+
+            // Determine toast type based on missing files
+            const totalMissing = result.stylesync.missing + result.momentsync.missing;
+            const toastType = totalMissing === 0 ? 'success' : 'info';
+            const title = totalMissing === 0 ? 'All Synced!' : 'Sync Status';
+
+            showToast(title, message, toastType, 15000);
+        } else {
+            const error = await response.json().catch(() => ({}));
+            showToast('Status Check Failed', error.detail || 'Failed to check sync status.', 'error');
+        }
+    } catch (error) {
+        console.error('Sync status check error:', error);
+        showToast('Status Check Error', 'An error occurred while checking sync status.', 'error');
+    } finally {
+        // Re-enable button and stop spinning
+        btn.disabled = false;
+        icon.classList.remove('spinning');
+    }
+}
+
+/**
  * Run MomentSync manually via button click
  */
 async function runMomentSync() {
@@ -1185,6 +1235,7 @@ Object.assign(window, {
     smartRefreshFileList,
     runManualSync,
     runMomentSync,
+    checkSyncStatus,
     applyMomentsFilter,
     observeImage
 });
