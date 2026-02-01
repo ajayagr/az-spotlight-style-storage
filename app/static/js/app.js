@@ -136,11 +136,7 @@ function buildFolderView() {
             // Re-attach error handler for cloned image
             clonedImg.addEventListener('error', () => {
                 clonedImg.classList.add('error');
-                const fullPath = clonedImg.dataset.fullPath;
-                if (fullPath && clonedImg.src.includes('/thumbnail/')) {
-                    console.warn(`Thumbnail failed for ${card.dataset.path}, falling back to full image`);
-                    clonedImg.src = fullPath;
-                }
+                console.warn(`Failed to load image: ${card.dataset.path}`);
             });
         }
 
@@ -522,13 +518,12 @@ function createFileCard(filePath, fileName, folder) {
     const ext = getFileExtension(filePath);
     const iconInfo = FILE_ICONS[ext] ?? FILE_ICONS.default;
 
-    // Use optimized thumbnails for images (300px height for good quality/performance balance)
-    // Full images are loaded only when clicked for viewing/download
+    // Use lazy loading with IntersectionObserver for images
+    // Images load only when they approach the viewport (300px threshold)
     // Use CDN if configured, otherwise use relative URLs
-    // Use data-src for lazy loading with IntersectionObserver
     const cdnPrefix = window.CDN_DOMAIN || '';
     const thumbContent = isImage
-        ? `<img data-src="${cdnPrefix}/thumbnail/${filePath}?height=300" class="thumb-img" alt="${fileName}" data-full-path="${cdnPrefix}/files/${filePath}">`
+        ? `<img data-src="${cdnPrefix}/files/${filePath}" class="thumb-img" alt="${fileName}">`
         : `<i class="fas ${iconInfo.class} file-icon" style="color: ${iconInfo.color};"></i>`;
     
     const folderBadge = folder 
@@ -561,12 +556,7 @@ function createFileCard(filePath, fileName, folder) {
 
             img.addEventListener('error', () => {
                 img.classList.add('error');
-                // Fallback to full image if thumbnail fails
-                const fullPath = img.dataset.fullPath;
-                if (fullPath && img.src.includes('/thumbnail/')) {
-                    console.warn(`Thumbnail failed for ${filePath}, falling back to full image`);
-                    img.src = fullPath;
-                }
+                console.warn(`Failed to load image: ${filePath}`);
             });
         }
     }

@@ -98,7 +98,7 @@
             <div class="card-content">
                 <div class="thumb-container">
                     {% if file.path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
-                    <img data-src="{{ cdn_domain }}/thumbnail/{{ file.path }}?height=300" class="thumb-img" alt="{{ file.name }}" data-full-path="{{ cdn_domain }}/files/{{ file.path }}">
+                    <img data-src="{{ cdn_domain }}/files/{{ file.path }}" class="thumb-img" alt="{{ file.name }}">
                     {% else %}
                         {% if file.path.endswith('.pdf') %}
                         <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
