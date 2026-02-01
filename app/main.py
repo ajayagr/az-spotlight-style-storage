@@ -1696,91 +1696,94 @@ def check_sync_status():
     """
     Check how many StyleSync and MomentSync files are missing.
     Returns counts of source images, styled images, and moment variations
-    that need to be created.
+    that need to be created. Uses the same calculation logic as the actual sync services.
     """
     try:
-        # Get all files
-        all_files = storage.list_files()
-        all_files_set = set(all_files)
+        from .stylesync.sync import StyleConfig
 
-        # Load styles configuration
-        styles = []
+        # Load styles from file
         try:
-            with open('styles.json', 'r') as f:
-                config = json.load(f)
-                styles = config.get('styles', [])
+            styles = load_styles_from_file()
         except:
-            pass
+            styles = []
 
-        # Load moments configuration
-        moments = []
+        # Load moments config
         try:
-            with open('moments.json', 'r') as f:
-                config = json.load(f)
-                times_of_day = config.get('times_of_day', [])
-                seasons = config.get('seasons', [])
-                # Generate all moment combinations
-                for t in times_of_day:
-                    moments.append(t['folder_name'])
-                for s in seasons:
-                    moments.append(s['folder_name'])
-                for t in times_of_day:
-                    for s in seasons:
-                        moments.append(f"{t['folder_name']}_{s['folder_name']}")
+            moments_config = load_moments_from_file()
         except:
-            pass
+            moments_config = {"times_of_day": [], "seasons": []}
 
-        # Get source images
-        source_folder = STYLE_SYNC_DEFAULT_SOURCE.strip("/")
-        source_images = []
-        for file_path in all_files:
-            if source_folder:
-                if not file_path.startswith(source_folder + "/") and not file_path.startswith(source_folder):
-                    continue
-            ext = Path(file_path).suffix.lower()
-            if ext in {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}:
-                source_images.append(file_path)
+        # Use environment defaults
+        source_path = STYLE_SYNC_DEFAULT_SOURCE
+        styled_path = STYLE_SYNC_DEFAULT_TARGET
+        output_path = MOMENT_SYNC_DEFAULT_OUTPUT
 
-        # Check what styled images are missing
-        missing_styled = []
-        existing_styled = []
-        for source_img in source_images:
-            filename = Path(source_img).name
-            for style in styles:
-                styled_path = f"{style['folder_name']}/{filename}"
-                if styled_path in all_files_set:
-                    existing_styled.append(styled_path)
-                else:
-                    missing_styled.append(styled_path)
+        # ===== StyleSync Status =====
+        style_configs = [
+            StyleConfig(
+                index=s.get("index", 0),
+                name=s["name"],
+                prompt_text=s["prompt_text"],
+                folder_name=s.get("folder_name", ""),
+                strength=s.get("strength", 0.7)
+            )
+            for s in styles
+        ]
 
-        # Check what moment images are missing
-        missing_moments = []
-        existing_moments = []
-        for styled_img in existing_styled:
-            filename = Path(styled_img).name
-            style_folder = str(Path(styled_img).parent).replace("\\", "/")
-            for moment in moments:
-                moment_path = f"moments/{style_folder}/{moment}/{filename}"
-                if moment_path in all_files_set:
-                    existing_moments.append(moment_path)
-                else:
-                    missing_moments.append(moment_path)
+        # Calculate StyleSync expected state and missing files
+        stylesync_expected_state = stylesync_service.map_expected_state(source_path, style_configs)
+        stylesync_missing_tasks = stylesync_service.get_missing_files(stylesync_expected_state, styled_path)
+
+        stylesync_total_expected = len(stylesync_expected_state)
+        stylesync_to_generate = len(stylesync_missing_tasks)
+        stylesync_existing = stylesync_total_expected - stylesync_to_generate
+
+        # ===== MomentSync Status =====
+        # Get available style folders to process
+        all_files = momentsync_service.storage.list_files()
+        available_style_folders = set()
+        normalized_styled = styled_path.strip("/")
+        for f in all_files:
+            if f.startswith(normalized_styled + "/"):
+                rel = f[len(normalized_styled) + 1:]
+                parts = rel.split("/")
+                if len(parts) >= 2:
+                    available_style_folders.add(parts[0])
+
+        style_folders_to_process = list(available_style_folders)
+
+        # Build moments and calculate expected state
+        times, seasons, composites = momentsync_service.build_moments(moments_config)
+        styled_images = momentsync_service.get_styled_images(styled_path, style_folders_to_process)
+        momentsync_expected_state = momentsync_service.map_expected_state(styled_images, times, seasons, composites)
+        momentsync_missing_tasks = momentsync_service.get_missing_files(momentsync_expected_state, output_path)
+
+        momentsync_total_expected = len(momentsync_expected_state)
+        momentsync_to_generate = len(momentsync_missing_tasks)
+        momentsync_existing = momentsync_total_expected - momentsync_to_generate
+
+        # Count source images for context
+        source_image_count = len(set([task.source_image for task in stylesync_expected_state]))
+
+        # Count total moments (times + seasons + composites)
+        total_moments = len(times) + len(seasons) + len(composites)
 
         return {
-            "source_images": len(source_images),
+            "source_images": source_image_count,
             "styles_configured": len(styles),
-            "moments_configured": len(moments),
+            "moments_configured": total_moments,
             "stylesync": {
-                "expected": len(source_images) * len(styles),
-                "existing": len(existing_styled),
-                "missing": len(missing_styled)
+                "expected": stylesync_total_expected,
+                "existing": stylesync_existing,
+                "missing": stylesync_to_generate
             },
             "momentsync": {
-                "expected": len(existing_styled) * len(moments),
-                "existing": len(existing_moments),
-                "missing": len(missing_moments)
+                "expected": momentsync_total_expected,
+                "existing": momentsync_existing,
+                "missing": momentsync_to_generate
             },
             "total_files_checked": len(all_files)
         }
     except Exception as e:
+        logger.error(f"Sync status check error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to check sync status: {str(e)}")
