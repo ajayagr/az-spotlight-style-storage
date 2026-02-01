@@ -1762,8 +1762,8 @@ def check_sync_status():
         momentsync_to_generate = len(momentsync_missing_tasks)
         momentsync_existing = momentsync_total_expected - momentsync_to_generate
 
-        # Count source images for context
-        source_image_count = len(set([task.source_image for task in stylesync_expected_state]))
+        # Count source images for context (expected_state is a dict, so iterate over values)
+        source_image_count = len(set([task.source_path for task in stylesync_expected_state.values()]))
 
         # Count total moments (times + seasons + composites)
         total_moments = len(times) + len(seasons) + len(composites)
