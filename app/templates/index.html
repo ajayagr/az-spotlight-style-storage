@@ -24,7 +24,7 @@
             <div class="view-toggle">
                 <span>Files</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="viewToggle">
+                    <input type="checkbox" id="viewToggle" checked>
                     <span class="slider"></span>
                 </label>
                 <span>Folders</span>
@@ -91,14 +91,14 @@
         </div>
     </div>
 
-    <!-- File View (Flat Grid) -->
-    <div class="file-grid" id="fileView">
+    <!-- File View (Flat Grid) - Hidden by default to prevent bulk image loading -->
+    <div class="file-grid hidden" id="fileView">
         {% for file in files %}
         <div class="file-card" data-folder="{{ file.folder or '' }}" data-path="{{ file.path }}">
             <div class="card-content">
                 <div class="thumb-container">
                     {% if file.path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
-                    <img src="/files/{{ file.path }}" class="thumb-img" alt="{{ file.name }}" loading="lazy">
+                    <img src="/thumbnail/{{ file.path }}?height=300" class="thumb-img" alt="{{ file.name }}" loading="lazy" data-full-path="/files/{{ file.path }}">
                     {% else %}
                         {% if file.path.endswith('.pdf') %}
                         <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
@@ -133,8 +133,8 @@
         {% endfor %}
     </div>
 
-    <!-- Folder View (Grouped) -->
-    <div id="folderView" class="hidden"></div>
+    <!-- Folder View (Grouped) - Default view to prevent bulk image loading -->
+    <div id="folderView"></div>
 </div>
 
 <script src="/static/js/app.js"></script>
