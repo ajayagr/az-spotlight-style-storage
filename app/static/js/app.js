@@ -455,10 +455,11 @@ function createFileCard(filePath, fileName, folder) {
     const isImage = IMAGE_EXTENSIONS.test(filePath);
     const ext = getFileExtension(filePath);
     const iconInfo = FILE_ICONS[ext] ?? FILE_ICONS.default;
-    
-    // Use full image path
+
+    // Use optimized thumbnails for images (300px height for good quality/performance balance)
+    // Full images are loaded only when clicked for viewing/download
     const thumbContent = isImage
-        ? `<img src="/files/${filePath}" class="thumb-img" alt="${fileName}" loading="lazy">`
+        ? `<img src="/thumbnail/${filePath}?height=300" class="thumb-img" alt="${fileName}" loading="lazy" data-full-path="/files/${filePath}">`
         : `<i class="fas ${iconInfo.class} file-icon" style="color: ${iconInfo.color};"></i>`;
     
     const folderBadge = folder 
@@ -481,7 +482,34 @@ function createFileCard(filePath, fileName, folder) {
     // Attach event listeners
     card.querySelector('.card-content').addEventListener('click', () => downloadFile(filePath));
     card.querySelector('.btn-delete').addEventListener('click', (e) => deleteFile(filePath, e));
-    
+
+    // Add image loading optimization for thumbnails
+    if (isImage) {
+        const img = card.querySelector('.thumb-img');
+        const container = card.querySelector('.thumb-container');
+
+        if (img && container) {
+            // Show loading state
+            container.classList.add('loading');
+
+            img.addEventListener('load', () => {
+                container.classList.remove('loading');
+                img.classList.add('loaded');
+            });
+
+            img.addEventListener('error', () => {
+                container.classList.remove('loading');
+                img.classList.add('error');
+                // Fallback to full image if thumbnail fails
+                const fullPath = img.dataset.fullPath;
+                if (fullPath && img.src.includes('/thumbnail/')) {
+                    console.warn(`Thumbnail failed for ${filePath}, falling back to full image`);
+                    img.src = fullPath;
+                }
+            });
+        }
+    }
+
     return card;
 }
 
