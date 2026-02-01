@@ -34,6 +34,9 @@ STYLE_SYNC_ICON_FOLDER = os.getenv("STYLE_SYNC_ICON_FOLDER", "icons/")
 # MomentSync default folder configuration
 MOMENT_SYNC_DEFAULT_OUTPUT = os.getenv("MOMENT_SYNC_DEFAULT_OUTPUT_FOLDER", "moments/")
 
+# CDN configuration for serving images through Azure Front Door
+CDN_DOMAIN = os.getenv("CDN_DOMAIN", "")  # Empty string = use relative URLs (direct to app)
+
 
 def load_styles_from_file() -> List[dict]:
     """
@@ -149,7 +152,11 @@ def read_root(request: Request):
         else:
             files.append({"path": f, "folder": None, "name": f})
             
-    return templates.TemplateResponse("index.html", {"request": request, "files": files})
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "files": files,
+        "cdn_domain": CDN_DOMAIN
+    })
 
 @app.get("/files/{filename:path}")
 def get_file(

@@ -98,7 +98,7 @@
             <div class="card-content">
                 <div class="thumb-container">
                     {% if file.path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')) %}
-                    <img src="/thumbnail/{{ file.path }}?height=300" class="thumb-img" alt="{{ file.name }}" loading="lazy" data-full-path="/files/{{ file.path }}">
+                    <img src="{{ cdn_domain }}/thumbnail/{{ file.path }}?height=300" class="thumb-img" alt="{{ file.name }}" loading="lazy" data-full-path="{{ cdn_domain }}/files/{{ file.path }}">
                     {% else %}
                         {% if file.path.endswith('.pdf') %}
                         <i class="fas fa-file-pdf file-icon" style="color: #ff4040;"></i>
@@ -137,6 +137,10 @@
     <div id="folderView"></div>
 </div>
 
+<script>
+    // CDN configuration - used by app.js for dynamically created image URLs
+    window.CDN_DOMAIN = "{{ cdn_domain }}";
+</script>
 <script src="/static/js/app.js"></script>
 <script>
     // Attach event listeners for server-rendered file cards

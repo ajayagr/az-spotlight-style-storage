@@ -458,8 +458,10 @@ function createFileCard(filePath, fileName, folder) {
 
     // Use optimized thumbnails for images (300px height for good quality/performance balance)
     // Full images are loaded only when clicked for viewing/download
+    // Use CDN if configured, otherwise use relative URLs
+    const cdnPrefix = window.CDN_DOMAIN || '';
     const thumbContent = isImage
-        ? `<img src="/thumbnail/${filePath}?height=300" class="thumb-img" alt="${fileName}" loading="lazy" data-full-path="/files/${filePath}">`
+        ? `<img src="${cdnPrefix}/thumbnail/${filePath}?height=300" class="thumb-img" alt="${fileName}" loading="lazy" data-full-path="${cdnPrefix}/files/${filePath}">`
         : `<i class="fas ${iconInfo.class} file-icon" style="color: ${iconInfo.color};"></i>`;
     
     const folderBadge = folder 
