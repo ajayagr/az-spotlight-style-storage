@@ -69,6 +69,48 @@
       "icon": "10_FlatDesign.webp",
       "prompt_text": "Transform this image into a flat design style with minimal shadows, bold solid colors, simple geometric shapes, clean lines, and a modern minimalist vector illustration aesthetic",
       "strength": 0.75
+    },
+    {
+      "name": "Isometric3D",
+      "folder_name": "isometric_3d",
+      "icon": "11_Isometric3D.webp",
+      "prompt_text": "Transform this image into an isometric 3D art style with precise 30-degree angles, grid-based perspective, clean geometric forms, architectural precision, and a technical illustration aesthetic",
+      "strength": 0.75
+    },
+    {
+      "name": "Risograph",
+      "folder_name": "risograph",
+      "icon": "12_Risograph.webp",
+      "prompt_text": "Transform this image into a risograph printing style with limited vibrant color palette, visible grain texture, ink overlap effects, screen printing aesthetics, and a DIY zine-like quality",
+      "strength": 0.8
+    },
+    {
+      "name": "Synthwave",
+      "folder_name": "synthwave",
+      "icon": "13_Synthwave.webp",
+      "prompt_text": "Transform this image into a synthwave retrowave style with vibrant purple and pink gradients, neon grids, 1980s futuristic aesthetic, sun-soaked horizons, and nostalgic vaporwave elements",
+      "strength": 0.8
+    },
+    {
+      "name": "PixelArt",
+      "folder_name": "pixel_art",
+      "icon": "14_PixelArt.webp",
+      "prompt_text": "Transform this image into pixel art style with retro 8-bit or 16-bit video game aesthetics, limited color palette, visible pixel grid, crisp edges, and nostalgic gaming visual quality",
+      "strength": 0.8
+    },
+    {
+      "name": "ArchitecturalSketch",
+      "folder_name": "architectural_sketch",
+      "icon": "15_ArchitecturalSketch.webp",
+      "prompt_text": "Transform this image into an architectural sketch style with hand-drawn line work, technical drawing precision, blueprint aesthetics, construction hatching, and professional architectural illustration quality",
+      "strength": 0.75
+    },
+    {
+      "name": "Diorama",
+      "folder_name": "diorama",
+      "icon": "16_Diorama.webp",
+      "prompt_text": "Transform this image into a miniature diorama style with tilt-shift photography effects, shallow depth of field, toy-like scale, enhanced color saturation, and a miniaturized model world aesthetic",
+      "strength": 0.75
     }
   ]
 }
