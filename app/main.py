@@ -6,6 +6,7 @@ from fastapi import FastAPI, UploadFile, HTTPException, File, Depends, Header, Q
 from fastapi.responses import Response, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import random
@@ -68,6 +69,11 @@ app = FastAPI(
     description="File storage with AI-powered style transfer capabilities",
     version="2.0.0"
 )
+
+# Add GZip compression middleware for better performance
+# Compresses responses > 1KB, reducing bandwidth and improving load times
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 storage = StorageService()
 stylesync_service = StyleSyncService(storage)
 momentsync_service = MomentSyncService(storage)
