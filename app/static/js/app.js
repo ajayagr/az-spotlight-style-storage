@@ -120,13 +120,29 @@ function buildFolderView() {
         }
         
         const clone = card.cloneNode(true);
-        
+
         // Re-attach event listeners using delegation pattern
         const cardContent = clone.querySelector('.card-content');
         const deleteBtn = clone.querySelector('.btn-delete');
-        
+
         cardContent.addEventListener('click', () => downloadFile(card.dataset.path));
         deleteBtn.addEventListener('click', (e) => deleteFile(card.dataset.path, e));
+
+        // Set up lazy loading and error handling for cloned images
+        const clonedImg = clone.querySelector('.thumb-img');
+        if (clonedImg && clonedImg.dataset.src) {
+            observeImage(clonedImg);
+
+            // Re-attach error handler for cloned image
+            clonedImg.addEventListener('error', () => {
+                clonedImg.classList.add('error');
+                const fullPath = clonedImg.dataset.fullPath;
+                if (fullPath && clonedImg.src.includes('/thumbnail/')) {
+                    console.warn(`Thumbnail failed for ${card.dataset.path}, falling back to full image`);
+                    clonedImg.src = fullPath;
+                }
+            });
+        }
 
         if (folder) {
             if (!folders.has(folder)) folders.set(folder, []);
